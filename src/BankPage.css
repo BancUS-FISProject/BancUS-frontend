@@ -1,0 +1,73 @@
+/* Estructura general de la página larga */
+.bank-page {
+  max-width: 1024px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* Cabecera grande superior */
+.bank-hero {
+  padding: 1.5rem 1rem 2rem;
+}
+
+.bank-hero-content h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.bank-hero-content p {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.bank-hero-list {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Secciones que se revelan al hacer scroll */
+.scroll-section {
+  margin: 1.5rem 0;
+  padding: 1.1rem 1rem;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.scroll-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-section-header h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.scroll-section-subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.scroll-section-body {
+  font-size: 0.95rem;
+}
+
+/* Layouts sencillos para el contenido */
+.two-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.label {
+  font-size: 0.8rem;
+}
