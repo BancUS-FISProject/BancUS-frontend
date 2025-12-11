@@ -11,6 +11,8 @@ import LoginActivityPage from "./components/LoginActivityPage";
 import PaymentsPage from "./components/PaymentsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import CardsPage from "./components/CardsPage";
+import HomePage from "./pages/HomePage";
+import PricingPage from "./pages/PricingPage";
 import "./App.css";
 
 function App() {
@@ -32,6 +34,7 @@ function App() {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/cards" element={<CardsPage />} />
               <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="/pricing" element={<PricingPage/>} />
             </Routes>
           </div>
         </main>
