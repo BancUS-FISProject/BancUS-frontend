@@ -1,3 +1,4 @@
+// src/components/OverviewPage.jsx
 import React, { useState } from "react";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
@@ -5,8 +6,46 @@ import "../OverviewPage.css";
 const DEMO_EMAIL = "demo@bancus.test";
 const DEMO_PASSWORD = "bancus123";
 
-function OverviewPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+const PLANS = [
+  {
+    id: "basic",
+    name: "Plan Básico",
+    price: "0 € / mes",
+    description: "Para probar la banca online sin compromiso.",
+    features: [
+      "Cuenta de pruebas",
+      "1 tarjeta virtual",
+      "Límites reducidos de operación",
+    ],
+    highlight: false,
+  },
+  {
+    id: "student",
+    name: "Plan Estudiante",
+    price: "4,99 € / mes",
+    description: "Pensado para el uso habitual de estudiantes.",
+    features: [
+      "Hasta 5 tarjetas virtuales",
+      "Notificaciones en tiempo real",
+      "Condiciones específicas para universitarios",
+    ],
+    highlight: true,
+  },
+  {
+    id: "pro",
+    name: "Plan Pro",
+    price: "9,99 € / mes",
+    description: "Ideal para proyectos de desarrollo e integración con APIs.",
+    features: [
+      "Tarjetas virtuales ilimitadas",
+      "Límites ampliados",
+      "Acceso avanzado a la API",
+    ],
+    highlight: false,
+  },
+];
+
+function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
   const [loginError, setLoginError] = useState("");
 
   const handleLoginSubmit = (e) => {
@@ -16,21 +55,22 @@ function OverviewPage() {
     const password = formData.get("password");
 
     if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      setIsLoggedIn(true);
       setLoginError("");
+      onLogin && onLogin();
     } else {
-      setIsLoggedIn(false);
-      setLoginError("Credenciales incorrectas. Revisa el usuario y la contraseña.");
+      setLoginError(
+        "Credenciales incorrectas. Revisa el usuario y la contraseña."
+      );
     }
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    onLogout && onLogout();
   };
 
   return (
     <div className="overview-page">
-      {/* Sección de login (siempre visible) */}
+      {/* LOGIN (siempre visible) */}
       <ScrollSection
         id="login"
         title="Accede a tu banca online"
@@ -72,9 +112,7 @@ function OverviewPage() {
               </button>
             </div>
 
-            {loginError && (
-              <p className="error-message">{loginError}</p>
-            )}
+            {loginError && <p className="error-message">{loginError}</p>}
 
             <div className="form-row form-buttons">
               <button type="submit" className="btn-primary">
@@ -90,7 +128,7 @@ function OverviewPage() {
             </div>
 
             <p className="muted">
-              Usuario de prueba: <code>{DEMO_EMAIL}</code> - Contraseña:{" "}
+              Usuario de prueba: <code>{DEMO_EMAIL}</code> · Contraseña:{" "}
               <code>{DEMO_PASSWORD}</code>
             </p>
 
@@ -109,7 +147,58 @@ function OverviewPage() {
         </div>
       </ScrollSection>
 
-      {/* Todo lo demás solo aparece si estamos logueados */}
+      {/* PRICING: solo cuando NO hay login */}
+      {!isLoggedIn && (
+        <ScrollSection
+          id="pricing"
+          title="Planes y precios"
+          subtitle="Elige el plan que mejor se adapte a tu uso."
+        >
+          <div className="pricing-grid">
+            {PLANS.map((plan) => (
+              <article
+                key={plan.id}
+                className={
+                  "pricing-card" +
+                  (plan.highlight ? " pricing-card--highlight" : "")
+                }
+              >
+                {plan.highlight && (
+                  <span className="pricing-badge">Más popular</span>
+                )}
+
+                <h3 className="pricing-name">{plan.name}</h3>
+                <p className="pricing-price">{plan.price}</p>
+                <p className="pricing-description">{plan.description}</p>
+
+                <ul className="pricing-features">
+                  {plan.features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  className="btn-primary pricing-cta"
+                  onClick={() => {
+                    // aquí podrías, por ejemplo, preseleccionar un plan
+                    // antes de enviar al microservicio de alta
+                  }}
+                >
+                  Empezar con este plan
+                </button>
+              </article>
+            ))}
+          </div>
+
+          <p className="muted small">
+            Los planes son ficticios y sirven como ejemplo de integración con un
+            microservicio de pricing.
+          </p>
+        </ScrollSection>
+      )}
+
+      {/* RESTO DE SECCIONES: solo con login */}
       {isLoggedIn && (
         <>
           {/* Resumen de cuenta */}

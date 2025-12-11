@@ -1,0 +1,106 @@
+.healthbar {
+  padding: 0.75rem 0 0.35rem;
+  background: transparent;
+}
+
+.healthbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9fafb;
+  border-radius: 9999px;
+  border: 1px solid #e5e7eb;
+  padding: 0.55rem 1.25rem;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+/* Lado izquierdo: info API */
+.healthbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.9rem;
+}
+
+.health-label {
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.health-code {
+  background: #111827;
+  color: #f9fafb;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+}
+
+/* Lado derecho: acciones y chips */
+.healthbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Botón refrescar */
+.hb-refresh {
+  border-radius: 9999px;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #111827;
+  color: #f9fafb;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.4);
+  transition:
+    background-color 0.1s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
+}
+
+.hb-refresh:hover {
+  background: #020617;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.5);
+}
+
+/* Chips de estado */
+.hb-chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.hb-chip--ok {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.hb-chip--neutral {
+  background: #eef2ff;
+  color: #3730a3;
+  border-color: #c7d2fe;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+  .healthbar-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .healthbar-right {
+    flex-wrap: wrap;
+  }
+}
+
+.hb-chip--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}

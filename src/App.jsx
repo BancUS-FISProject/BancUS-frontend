@@ -1,6 +1,11 @@
 // src/App.jsx
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import HealthBar from "./components/HealthBar";
 import Navbar from "./components/Navbar";
 import OverviewPage from "./components/OverviewPage";
@@ -11,30 +16,73 @@ import LoginActivityPage from "./components/LoginActivityPage";
 import PaymentsPage from "./components/PaymentsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import CardsPage from "./components/CardsPage";
-import HomePage from "./pages/HomePage";
 import PricingPage from "./pages/PricingPage";
 import "./App.css";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const handleLogin = () => setIsLoggedIn(true);
+  const handleLogout = () => setIsLoggedIn(false);
+
+  const ProtectedRoute = ({ element }) =>
+    isLoggedIn ? element : <Navigate to="/" replace />;
+
   return (
     <Router>
       <div className="app">
         <HealthBar />
-        <Navbar />
+
+        {/* Navbar solo si hay login */}
+        <Navbar isLoggedIn={isLoggedIn} />
 
         <main className="app-main">
           <div className="page-inner">
             <Routes>
-              <Route path="/" element={<OverviewPage />} />
-              <Route path="/accounts" element={<AccountsPage />} />
-              <Route path="/transactions" element={<TransactionsPage />} />
-              <Route path="/fraud" element={<FraudPage />} />
-              <Route path="/login-activity" element={<LoginActivityPage />} />
-              <Route path="/payments" element={<PaymentsPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/cards" element={<CardsPage />} />
+              <Route
+                path="/"
+                element={
+                  <OverviewPage
+                    isLoggedIn={isLoggedIn}
+                    onLogin={handleLogin}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              <Route
+                path="/accounts"
+                element={<ProtectedRoute element={<AccountsPage />} />}
+              />
+              <Route
+                path="/transactions"
+                element={<ProtectedRoute element={<TransactionsPage />} />}
+              />
+              <Route
+                path="/fraud"
+                element={<ProtectedRoute element={<FraudPage />} />}
+              />
+              <Route
+                path="/login-activity"
+                element={<ProtectedRoute element={<LoginActivityPage />} />}
+              />
+              <Route
+                path="/payments"
+                element={<ProtectedRoute element={<PaymentsPage />} />}
+              />
+              <Route
+                path="/notifications"
+                element={<ProtectedRoute element={<NotificationsPage />} />}
+              />
+              <Route
+                path="/cards"
+                element={<ProtectedRoute element={<CardsPage />} />}
+              />
+
+              {/* Página de pricing aparte (además del bloque en OverviewPage) */}
+              <Route path="/pricing" element={<PricingPage />} />
+
               <Route path="*" element={<Navigate to="/" replace />} />
-              <Route path="/pricing" element={<PricingPage/>} />
             </Routes>
           </div>
         </main>

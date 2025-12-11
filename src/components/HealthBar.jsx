@@ -6,17 +6,20 @@ function HealthBar() {
   const [cacheOk, setCacheOk] = useState(null);
   const [healthInfo, setHealthInfo] = useState(null);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   async function checkHealth() {
+    setLoading(true);
     setError(null);
+
     try {
-      // Pongamos que si no lanza error está OK
+      // Si no lanza error, asumimos que la caché responde.
       await healthApi.pingCache();
       setCacheOk(true);
     } catch (err) {
       console.error(err);
       setCacheOk(false);
-      setError("Error en caché o ping");
+      setError("Error al comprobar la caché");
     }
 
     try {
@@ -24,7 +27,9 @@ function HealthBar() {
       setHealthInfo(data);
     } catch (err) {
       console.error(err);
-      setError((prev) => prev || "Error en health");
+      setError((prev) => prev || "Error al comprobar el estado general");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -32,32 +37,66 @@ function HealthBar() {
     checkHealth();
   }, []);
 
+  // Texto y estilo de la caché
+  let cacheText = "...";
+  let cacheClass = "hb-chip hb-chip--neutral";
+  if (cacheOk === true) {
+    cacheText = "OK";
+    cacheClass = "hb-chip hb-chip--ok";
+  } else if (cacheOk === false) {
+    cacheText = "ERROR";
+    cacheClass = "hb-chip hb-chip--error";
+  }
+
+  // Texto y estilo de la DB (si viene en el health)
+  const dbStatus =
+    healthInfo && (healthInfo.db ?? healthInfo.database ?? healthInfo.dbStatus);
+  let dbText = "...";
+  let dbClass = "hb-chip hb-chip--neutral";
+  if (dbStatus === "ok" || dbStatus === true) {
+    dbText = "OK";
+    dbClass = "hb-chip hb-chip--ok";
+  } else if (dbStatus != null) {
+    dbText = String(dbStatus);
+    dbClass = "hb-chip hb-chip--error";
+  }
+
   return (
-    <div className="health-bar">
-      <span className="api-base">
-        API: <code>{API_BASE}</code>
-      </span>
+    <div className="healthbar">
+      <div className="page-inner healthbar-inner">
+        <div className="healthbar-left">
+          <span className="health-label">API</span>
+          <code className="health-code">{API_BASE}</code>
+        </div>
 
-      <button onClick={checkHealth}>Refrescar estado</button>
+        <div className="healthbar-right">
+          <button
+            type="button"
+            className="hb-refresh"
+            onClick={checkHealth}
+            disabled={loading}
+          >
+            {loading ? "Comprobando..." : "Refrescar estado"}
+          </button>
 
-      <span className="health-indicator">
-        Caché:{" "}
-        {cacheOk === null ? (
-          "..."
-        ) : cacheOk ? (
-          <span className="badge badge-ok">OK</span>
-        ) : (
-          <span className="badge badge-error">ERROR</span>
-        )}
-      </span>
+          <span className={cacheClass}>Caché: {cacheText}</span>
 
-      {healthInfo && (
-        <span className="health-json">
-          Health: <code>{JSON.stringify(healthInfo)}</code>
-        </span>
-      )}
+          {healthInfo && (
+            <>
+              <span className={dbClass}>DB: {dbText}</span>
+              <span className="hb-chip hb-chip--neutral">
+                Health: <code>{JSON.stringify(healthInfo)}</code>
+              </span>
+            </>
+          )}
 
-      {error && <span className="health-error">Error: {error}</span>}
+          {error && (
+            <span className="hb-chip hb-chip--error">
+              Error: {error}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

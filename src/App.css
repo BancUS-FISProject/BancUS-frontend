@@ -272,3 +272,29 @@ body {
   max-width: 3000px;
   margin: 0 auto;
 }
+
+
+
+.app {
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+
+.app-main {
+  padding: 0 0 3rem;
+}
+
+
+.page-inner {
+  width: 100%;
+  max-width: none;         
+  margin: 0;                
+  padding: 0 3rem;          
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .page-inner {
+    padding: 0 1.25rem;
+  }
+}
