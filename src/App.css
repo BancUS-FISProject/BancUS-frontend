@@ -269,11 +269,11 @@ body {
 
 /* Contenedor central; si quieres aún más ancho, sube el max-width */
 .page-inner {
-  max-width: 3000px;
+  max-width: 5500px;
   margin: 0 auto;
 }
 
-
+/* Layout general de la app */
 
 .app {
   min-height: 100vh;
@@ -287,7 +287,7 @@ body {
 
 .page-inner {
   width: 100%;
-  max-width: none;         
+  max-width: 3000px;         
   margin: 0;                
   padding: 0 3rem;          
   box-sizing: border-box;
@@ -298,3 +298,4 @@ body {
     padding: 0 1.25rem;
   }
 }
+

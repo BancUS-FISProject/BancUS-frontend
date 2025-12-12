@@ -3,31 +3,29 @@ import { cardsApi } from "../api";
 import CardTable from "./CardTable";
 import CardForm from "./CardForm";
 import EditCardModal from "./EditCardModal";
+import "./CardsPage.css";
 
 function CardsPage() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Lista de titulares disponibles para el select
   const [holderOptions, setHolderOptions] = useState([]);
   const [selectedHolder, setSelectedHolder] = useState("");
 
   const [isCreating, setIsCreating] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
 
-  // Cargar todas las tarjetas al inicio
   useEffect(() => {
     loadAllCards();
   }, []);
 
-  // Extraer titulares únicos y guardarlos ordenados
   function updateHolderOptions(cardsList) {
     const names = Array.from(
       new Set(
         (cardsList || [])
           .map((c) => c.cardholderName)
-          .filter(Boolean) // quitamos undefined/null
+          .filter(Boolean)
       )
     ).sort((a, b) => a.localeCompare(b, "es"));
     setHolderOptions(names);
@@ -40,7 +38,7 @@ function CardsPage() {
       const data = await cardsApi.getAll();
       setCards(data || []);
       updateHolderOptions(data || []);
-      setSelectedHolder(""); // “Todos los titulares”
+      setSelectedHolder("");
     } catch (err) {
       console.error(err);
       setError(err.message || "Error cargando tarjetas");
@@ -52,15 +50,13 @@ function CardsPage() {
   }
 
   async function loadCardsByHolder(name) {
-    if (!name) {
-      return loadAllCards();
-    }
+    if (!name) return loadAllCards();
+
     setLoading(true);
     setError(null);
     try {
       const data = await cardsApi.getByHolder(name);
       setCards(Array.isArray(data) ? data : []);
-      // Opcional: mantenemos las opciones de titulares tal cual estaban
     } catch (err) {
       if (err.status === 404) {
         setCards([]);
@@ -74,13 +70,11 @@ function CardsPage() {
     }
   }
 
-  // Crear tarjeta
   async function handleCreate(cardholderName) {
     try {
       setError(null);
       const created = await cardsApi.create(cardholderName);
       setCards((prev) => [...prev, created]);
-      // Actualizamos opciones de titulares
       updateHolderOptions([...cards, created]);
       setIsCreating(false);
     } catch (err) {
@@ -89,9 +83,8 @@ function CardsPage() {
     }
   }
 
-  // Cambiar estado Active <-> Frozen
   async function handleToggleFreeze(card) {
-    const current = card.cardFreeze; // "Active" o "Frozen"
+    const current = card.cardFreeze;
     const nextStatus = current === "Active" ? "frozen" : "active";
 
     try {
@@ -106,7 +99,6 @@ function CardsPage() {
     }
   }
 
-  // Borrar tarjeta
   async function handleDelete(card) {
     const ok = window.confirm(
       `¿Seguro que quieres borrar la tarjeta ${card._id} de ${card.cardholderName}?`
@@ -125,7 +117,6 @@ function CardsPage() {
     }
   }
 
-  // Guardar cambios al editar
   async function handleSaveEdit(id, payload) {
     try {
       setError(null);
@@ -140,7 +131,6 @@ function CardsPage() {
     }
   }
 
-  // Cambio del select de titular
   function handleHolderChange(e) {
     const value = e.target.value;
     setSelectedHolder(value);
@@ -151,57 +141,66 @@ function CardsPage() {
     <div className="cards-page">
       <header className="cards-header">
         <h1>Gestor de tarjetas</h1>
-        <p>Frontend React para el microservicio de tarjetas</p>
+        <p>
+          Interfaz React para gestionar tarjetas del microservicio: alta,
+          filtrado, congelación y borrado.
+        </p>
       </header>
 
       <section className="cards-actions">
-        <div className="cards-filter-form">
-          <label className="holder-select-label">
-            <span>Filtrar por titular:</span>
-            <select
-              className="holder-select"
-              value={selectedHolder}
-              onChange={handleHolderChange}
-            >
-              <option value="">Todos los titulares</option>
-              {holderOptions.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="cards-actions-card">
+          <div className="cards-filter-form">
+            <label className="holder-select-label">
+              <span>Filtrar por titular</span>
+              <select
+                className="holder-select"
+                value={selectedHolder}
+                onChange={handleHolderChange}
+              >
+                <option value="">Todos los titulares</option>
+                {holderOptions.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <button
-            type="button"
-            onClick={loadAllCards}
-            className="btn-secondary"
-          >
-            Limpiar filtro
-          </button>
+            <div className="cards-buttons">
+              <button
+                type="button"
+                onClick={loadAllCards}
+                className="btn-secondary"
+              >
+                Limpiar filtro
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setIsCreating(true)}
-            className="btn-primary"
-          >
-            Nueva tarjeta
-          </button>
+              <button
+                type="button"
+                onClick={() => setIsCreating(true)}
+                className="btn-primary"
+              >
+                Nueva tarjeta
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
       {error && <div className="cards-error">Error: {error}</div>}
 
-      {loading ? (
-        <div>Cargando tarjetas...</div>
-      ) : (
-        <CardTable
-          cards={cards}
-          onToggleFreeze={handleToggleFreeze}
-          onDelete={handleDelete}
-          onEdit={setEditingCard}
-        />
-      )}
+      <section className="cards-table-card">
+        {loading ? (
+          <div className="cards-loading">Cargando tarjetas…</div>
+        ) : (
+          <CardTable
+            cards={cards}
+            onToggleFreeze={handleToggleFreeze}
+            onDelete={handleDelete}
+            onEdit={setEditingCard}
+          />
+        )}
+      </section>
 
       {isCreating && (
         <div className="modal-backdrop">

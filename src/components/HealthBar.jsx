@@ -1,6 +1,7 @@
 // src/components/HealthBar.jsx
 import React, { useEffect, useState } from "react";
 import { healthApi, API_BASE } from "../api";
+import "../HealthBar.css";
 
 function HealthBar() {
   const [cacheOk, setCacheOk] = useState(null);
@@ -37,7 +38,7 @@ function HealthBar() {
     checkHealth();
   }, []);
 
-  // Texto y estilo de la caché
+  // Chip de caché
   let cacheText = "...";
   let cacheClass = "hb-chip hb-chip--neutral";
   if (cacheOk === true) {
@@ -48,7 +49,7 @@ function HealthBar() {
     cacheClass = "hb-chip hb-chip--error";
   }
 
-  // Texto y estilo de la DB (si viene en el health)
+  // Chip de DB (si viene en el health)
   const dbStatus =
     healthInfo && (healthInfo.db ?? healthInfo.database ?? healthInfo.dbStatus);
   let dbText = "...";
@@ -60,6 +61,13 @@ function HealthBar() {
     dbText = String(dbStatus);
     dbClass = "hb-chip hb-chip--error";
   }
+
+  // Chip global
+  const okGlobal =
+    healthInfo && (healthInfo.ok === true || healthInfo.status === "ok");
+  const globalClass = okGlobal
+    ? "hb-chip hb-chip--ok"
+    : "hb-chip hb-chip--neutral";
 
   return (
     <div className="healthbar">
@@ -80,19 +88,17 @@ function HealthBar() {
           </button>
 
           <span className={cacheClass}>Caché: {cacheText}</span>
+          {healthInfo && <span className={dbClass}>DB: {dbText}</span>}
 
           {healthInfo && (
-            <>
-              <span className={dbClass}>DB: {dbText}</span>
-              <span className="hb-chip hb-chip--neutral">
-                Health: <code>{JSON.stringify(healthInfo)}</code>
-              </span>
-            </>
+            <span className={globalClass}>
+              Health: <code>{JSON.stringify(healthInfo)}</code>
+            </span>
           )}
 
           {error && (
-            <span className="hb-chip hb-chip--error">
-              Error: {error}
+            <span className="hb-chip hb-chip--error hb-error-text">
+              {error}
             </span>
           )}
         </div>
