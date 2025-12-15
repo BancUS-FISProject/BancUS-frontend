@@ -1,14 +1,14 @@
 // src/api.js
 
 // Detectamos la URL base de la API de forma segura
-let API_BASE = "http://localhost:3000/api/v1";
+let API_BASE = "http://localhost:10000/v1";
 
 // Vite: variables tipo import.meta.env.VITE_*
 if (typeof import.meta !== "undefined" && import.meta.env) {
   if (import.meta.env.VITE_API_BASE_URL) {
     API_BASE = import.meta.env.VITE_API_BASE_URL;
   }
-// CRA u otros entornos que definan process.env (por si acaso)
+  // CRA u otros entornos que definan process.env (por si acaso)
 } else if (typeof process !== "undefined" && process.env) {
   if (process.env.REACT_APP_API_BASE_URL) {
     API_BASE = process.env.REACT_APP_API_BASE_URL;
@@ -75,6 +75,64 @@ export const cardsApi = {
   deleteById: (id) =>
     apiRequest(`/cards/${id}`, {
       method: "DELETE",
+    }),
+};
+
+// Endpoints específicos para cuentas
+export const accountsApi = {
+  // Obtener cuenta por IBAN
+  getByIban: (iban) => apiRequest(`/accounts/${encodeURIComponent(iban)}`),
+
+  // Crear cuenta (FastAPI requiere trailing slash)
+  create: (data) =>
+    apiRequest("/accounts/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  // Actualizar cuenta (name, email, subscription)
+  update: (iban, payload) =>
+    apiRequest(`/accounts/${encodeURIComponent(iban)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  // Borrar cuenta
+  delete: (iban) =>
+    apiRequest(`/accounts/${encodeURIComponent(iban)}`, {
+      method: "DELETE",
+    }),
+
+  // Bloquear cuenta
+  block: (iban) =>
+    apiRequest(`/accounts/${encodeURIComponent(iban)}/block`, {
+      method: "PATCH",
+    }),
+
+  // Desbloquear cuenta
+  unblock: (iban) =>
+    apiRequest(`/accounts/${encodeURIComponent(iban)}/unblock`, {
+      method: "PATCH",
+    }),
+
+  // Actualizar balance (operación)
+  updateBalance: (iban, balance, currency = "EUR") =>
+    apiRequest(`/accounts/operation/${encodeURIComponent(iban)}/${currency}`, {
+      method: "PATCH",
+      body: JSON.stringify({ balance }),
+    }),
+
+  // Crear tarjeta para cuenta
+  createCard: (iban) =>
+    apiRequest(`/accounts/card/${encodeURIComponent(iban)}`, {
+      method: "POST",
+    }),
+
+  // Eliminar tarjeta de cuenta
+  deleteCard: (iban, pan) =>
+    apiRequest(`/accounts/card/${encodeURIComponent(iban)}`, {
+      method: "DELETE",
+      body: JSON.stringify({ pan }),
     }),
 };
 
