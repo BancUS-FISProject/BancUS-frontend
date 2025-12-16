@@ -1,7 +1,6 @@
 /* Página de resumen / landing */
 .overview-page {
   padding: 2.5rem 0 4rem;
-  background: #ffffff; /* sin degradado gris */
   min-height: calc(100vh - 80px);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;

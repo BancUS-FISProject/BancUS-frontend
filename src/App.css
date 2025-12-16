@@ -8,7 +8,7 @@ body {
 }
 
 .app {
-  max-width: 1200px;
+  max-width: 2000px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -286,8 +286,7 @@ body {
 
 
 .page-inner {
-  width: 100%;
-  max-width: 3000px;         
+  width: 1200px;     
   margin: 0;                
   padding: 0 3rem;          
   box-sizing: border-box;
@@ -299,3 +298,14 @@ body {
   }
 }
 
+.app-main{
+  width: 100%;
+}
+
+.page-inner{
+  width: 1200px;
+  max-width: none;          /* clave: quitamos límite */
+  margin: 0;                /* sin centrado que estreche */
+  padding: 0 24px;          /* opcional: aire lateral */
+  box-sizing: border-box;
+}

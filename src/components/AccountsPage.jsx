@@ -5,7 +5,7 @@ import AccountForm from "./AccountForm";
 import EditAccountModal from "./EditAccountModal";
 import ManageCardsModal from "./ManageCardsModal";
 import UpdateBalanceModal from "./UpdateBalanceModal";
-
+import "./AccountsPage.css";
 function AccountsPage() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -179,7 +179,7 @@ function AccountsPage() {
   }
 
   return (
-    <div className="cards-page">
+    <div className="cards-page accounts-page">
       <header className="cards-header">
         <h1>Gestor de cuentas</h1>
         <p>Frontend React para el microservicio de cuentas</p>
