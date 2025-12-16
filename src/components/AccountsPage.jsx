@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { accountsApi } from "../api";
 import AccountTable from "./AccountTable";
 import AccountForm from "./AccountForm";
@@ -11,6 +11,13 @@ function AccountsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Estado de paginación
+  const [pagination, setPagination] = useState({
+    page: 1,
+    size: 10,
+    total: 0,
+  });
+
   // Campo de búsqueda por IBAN
   const [searchIban, setSearchIban] = useState("");
 
@@ -18,6 +25,33 @@ function AccountsPage() {
   const [editingAccount, setEditingAccount] = useState(null);
   const [managingCards, setManagingCards] = useState(null);
   const [updatingBalance, setUpdatingBalance] = useState(null);
+
+  // Cargar todas las cuentas al montar el componente
+  useEffect(() => {
+    loadAllAccounts(1, 10);
+  }, []);
+
+  // Cargar todas las cuentas (paginado)
+  async function loadAllAccounts(page = 1, size = 10) {
+    setLoading(true);
+    setError(null);
+    setSearchIban(""); // Limpiar búsqueda al cargar todas
+    try {
+      const data = await accountsApi.getAll(page, size);
+      setAccounts(data.items || []);
+      setPagination({
+        page: data.page || page,
+        size: data.size || size,
+        total: data.total || 0,
+      });
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error cargando cuentas");
+      setAccounts([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // Buscar cuenta por IBAN
   async function handleSearch(e) {
@@ -32,6 +66,7 @@ function AccountsPage() {
     try {
       const data = await accountsApi.getByIban(searchIban.trim());
       setAccounts(data ? [data] : []);
+      setPagination({ page: 1, size: 10, total: data ? 1 : 0 });
     } catch (err) {
       if (err.status === 404) {
         setAccounts([]);
@@ -45,11 +80,11 @@ function AccountsPage() {
     }
   }
 
-  // Limpiar búsqueda
+  // Limpiar búsqueda y recargar todas las cuentas
   function handleClearSearch() {
     setSearchIban("");
-    setAccounts([]);
     setError(null);
+    loadAllAccounts(1, 10);
   }
 
   // Crear cuenta
@@ -58,13 +93,9 @@ function AccountsPage() {
       setError(null);
       const created = await accountsApi.create(accountData);
       console.log("Cuenta creada:", created);
-
-      if (created && created.iban) {
-        // Añadir la cuenta creada a la lista y mostrarla
-        setAccounts([created]);
-        setSearchIban(created.iban);
-      }
       setIsCreating(false);
+      // Recargar la lista de cuentas para mostrar la nueva
+      loadAllAccounts(1, pagination.size);
     } catch (err) {
       console.error("Error creando cuenta:", err);
       setError(err.message || "Error creando cuenta");
@@ -223,16 +254,43 @@ function AccountsPage() {
       {error && <div className="cards-error">Error: {error}</div>}
 
       {loading ? (
-        <div>Buscando cuentas...</div>
+        <div>Cargando cuentas...</div>
       ) : (
-        <AccountTable
-          accounts={accounts}
-          onToggleBlock={handleToggleBlock}
-          onDelete={handleDelete}
-          onEdit={setEditingAccount}
-          onManageCards={setManagingCards}
-          onUpdateBalance={setUpdatingBalance}
-        />
+        <>
+          <AccountTable
+            accounts={accounts}
+            onToggleBlock={handleToggleBlock}
+            onDelete={handleDelete}
+            onEdit={setEditingAccount}
+            onManageCards={setManagingCards}
+            onUpdateBalance={setUpdatingBalance}
+          />
+
+          {/* Controles de paginación */}
+          {pagination.total > 0 && (
+            <div className="pagination-controls">
+              <span className="pagination-info">
+                Mostrando {accounts.length} de {pagination.total} cuentas (Página {pagination.page} de {Math.ceil(pagination.total / pagination.size)})
+              </span>
+              <div className="pagination-buttons">
+                <button
+                  className="btn-secondary"
+                  onClick={() => loadAllAccounts(pagination.page - 1, pagination.size)}
+                  disabled={pagination.page <= 1}
+                >
+                  ← Anterior
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => loadAllAccounts(pagination.page + 1, pagination.size)}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.size)}
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {isCreating && (

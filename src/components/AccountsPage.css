@@ -1,12 +1,12 @@
 /* src/components/AccountsPage.css */
 
-.accounts-page .cards-table-wrapper{
+.accounts-page .cards-table-wrapper {
   width: 100%;
   overflow-x: auto;
 }
 
 /* Tabla */
-.accounts-page .cards-table{
+.accounts-page .cards-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
@@ -17,7 +17,7 @@
 }
 
 /* Cabecera */
-.accounts-page .cards-table thead th{
+.accounts-page .cards-table thead th {
   padding: 0.55rem 0.7rem;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
@@ -29,7 +29,8 @@
 }
 
 /* Celdas */
-.accounts-page .cards-table tbody td{     /* menos alto, más compacto */
+.accounts-page .cards-table tbody td {
+  /* menos alto, más compacto */
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
   vertical-align: middle;
@@ -37,44 +38,76 @@
 }
 
 /* Zebra y hover */
-.accounts-page .cards-table tbody tr:nth-child(even){
+.accounts-page .cards-table tbody tr:nth-child(even) {
   background: #fcfcfc;
 }
 
-.accounts-page .cards-table tbody tr:hover{
+.accounts-page .cards-table tbody tr:hover {
   background: #f3f4ff;
 }
 
 /* Evitar invasión entre columnas */
 .accounts-page .cards-table th,
-.accounts-page .cards-table td{
+.accounts-page .cards-table td {
   overflow: hidden;
 }
 
 /* Reparto de columnas (8 columnas como en tu tabla) */
 .accounts-page .cards-table th:nth-child(1),
-.accounts-page .cards-table td:nth-child(1){ width: 18%; } /* IBAN */
+.accounts-page .cards-table td:nth-child(1) {
+  width: 18%;
+}
+
+/* IBAN */
 
 .accounts-page .cards-table th:nth-child(2),
-.accounts-page .cards-table td:nth-child(2){ width: 12%; } /* NOMBRE */
+.accounts-page .cards-table td:nth-child(2) {
+  width: 12%;
+}
+
+/* NOMBRE */
 
 .accounts-page .cards-table th:nth-child(3),
-.accounts-page .cards-table td:nth-child(3){ width: 24%; } /* EMAIL */
+.accounts-page .cards-table td:nth-child(3) {
+  width: 24%;
+}
+
+/* EMAIL */
 
 .accounts-page .cards-table th:nth-child(4),
-.accounts-page .cards-table td:nth-child(4){ width: 12%; } /* SUSCRIPCIÓN */
+.accounts-page .cards-table td:nth-child(4) {
+  width: 12%;
+}
+
+/* SUSCRIPCIÓN */
 
 .accounts-page .cards-table th:nth-child(5),
-.accounts-page .cards-table td:nth-child(5){ width: 10%; } /* BALANCE */
+.accounts-page .cards-table td:nth-child(5) {
+  width: 10%;
+}
+
+/* BALANCE */
 
 .accounts-page .cards-table th:nth-child(6),
-.accounts-page .cards-table td:nth-child(6){ width: 8%; }  /* TARJETAS */
+.accounts-page .cards-table td:nth-child(6) {
+  width: 8%;
+}
+
+/* TARJETAS */
 
 .accounts-page .cards-table th:nth-child(7),
-.accounts-page .cards-table td:nth-child(7){ width: 10%; } /* FECHA */
+.accounts-page .cards-table td:nth-child(7) {
+  width: 10%;
+}
+
+/* FECHA */
 
 .accounts-page .cards-table th:nth-child(8),
-.accounts-page .cards-table td:nth-child(8){ width: 6%; }  /* ESTADO */
+.accounts-page .cards-table td:nth-child(8) {
+  width: 6%;
+}
+
+/* ESTADO */
 
 /* Ellipsis solo donde interesa */
 .accounts-page .cards-table td:nth-child(1),
@@ -82,47 +115,140 @@
 .accounts-page .cards-table td:nth-child(3),
 .accounts-page .cards-table th:nth-child(1),
 .accounts-page .cards-table th:nth-child(2),
-.accounts-page .cards-table th:nth-child(3){
+.accounts-page .cards-table th:nth-child(3) {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
 /* Mejor lectura por tipo de dato */
-.accounts-page .cards-table td:nth-child(1){
+.accounts-page .cards-table td:nth-child(1) {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-variant-numeric: tabular-nums;
 }
 
 .accounts-page .cards-table th:nth-child(5),
-.accounts-page .cards-table td:nth-child(5){
-  text-align: right;                 /* BALANCE a la derecha */
+.accounts-page .cards-table td:nth-child(5) {
+  text-align: right;
+  /* BALANCE a la derecha */
   font-variant-numeric: tabular-nums;
 }
 
 .accounts-page .cards-table th:nth-child(6),
-.accounts-page .cards-table td:nth-child(6){
-  text-align: center;                /* TARJETAS centrado */
+.accounts-page .cards-table td:nth-child(6) {
+  text-align: center;
+  /* TARJETAS centrado */
 }
 
 .accounts-page .cards-table th:nth-child(7),
-.accounts-page .cards-table td:nth-child(7){
+.accounts-page .cards-table td:nth-child(7) {
   white-space: nowrap;
-  text-align: center;                /* FECHA centrada */
+  text-align: center;
+  /* FECHA centrada */
 }
 
 .accounts-page .cards-table th:nth-child(8),
-.accounts-page .cards-table td:nth-child(8){
-  text-align: center;                /* ESTADO centrado */
+.accounts-page .cards-table td:nth-child(8) {
+  text-align: center;
+  /* ESTADO centrado */
 }
 
 /* Responsive */
-@media (max-width: 768px){
-  .accounts-page .cards-table thead th{
+@media (max-width: 768px) {
+  .accounts-page .cards-table thead th {
     font-size: 0.74rem;
   }
 
-  .accounts-page .cards-table tbody td{
+  .accounts-page .cards-table tbody td {
     padding: 0.45rem 0.55rem;
   }
 }
 
+/* Estilos de botones copiados de CardTable.css para consistencia */
+.cards-table-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+}
+
+.card-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s ease;
+}
+
+/* Bloquear/Desbloquear */
+.card-action-freeze {
+  min-width: 6.5rem;
+  text-align: center;
+  background: #eef2ff;
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+}
+
+.card-action-freeze:hover {
+  background: #e0e7ff;
+  transform: translateY(-1px);
+}
+
+/* Editar */
+.card-action-edit {
+  background: #ecfeff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.card-action-edit:hover {
+  background: #e0f2fe;
+  transform: translateY(-1px);
+}
+
+/* Borrar */
+.card-action-delete {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.card-action-delete:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+}
+
+/* Gestionar Fondos (verde) */
+.card-action-fund {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.card-action-fund:hover {
+  background: #dcfce7;
+  transform: translateY(-1px);
+}
+
+/* Ver Tarjetas (púrpura) */
+.card-action-cards {
+  background: #faf5ff;
+  color: #7e22ce;
+  border-color: #e9d5ff;
+}
+
+.card-action-cards:hover {
+  background: #f3e8ff;
+  transform: translateY(-1px);
+}
+
+/* Anchos de columnas ajustados para opciones */
+.accounts-page .cards-table th:nth-child(9),
+.accounts-page .cards-table td:nth-child(9) {
+  width: 38%;
+  /* Más espacio para los botones */
+}

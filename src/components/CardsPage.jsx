@@ -3,7 +3,7 @@ import { cardsApi } from "../api";
 import CardTable from "./CardTable";
 import CardForm from "./CardForm";
 import EditCardModal from "./EditCardModal";
-import "./CardsPage.css";
+import "./cardsPage.css";
 
 function CardsPage() {
   const [cards, setCards] = useState([]);

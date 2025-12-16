@@ -80,6 +80,10 @@ export const cardsApi = {
 
 // Endpoints específicos para cuentas
 export const accountsApi = {
+  // Obtener todas las cuentas (paginado)
+  getAll: (page = 1, limit = 10) =>
+    apiRequest(`/accounts/?page=${page}&limit=${limit}`),
+
   // Obtener cuenta por IBAN
   getByIban: (iban) => apiRequest(`/accounts/${encodeURIComponent(iban)}`),
 
@@ -132,7 +136,7 @@ export const accountsApi = {
   deleteCard: (iban, pan) =>
     apiRequest(`/accounts/card/${encodeURIComponent(iban)}`, {
       method: "DELETE",
-      body: JSON.stringify({ pan }),
+      body: JSON.stringify({ PAN: pan }),
     }),
 };
 

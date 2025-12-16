@@ -18,11 +18,7 @@ function ManageCardsModal({ account, onClose, onCreateCard, onDeleteCard }) {
         setCardToDelete(null);
     }
 
-    // Ocultar parte del PAN
-    function maskPan(pan) {
-        if (!pan || pan.length < 8) return pan;
-        return `****-****-****-${pan.slice(-4)}`;
-    }
+
 
     return (
         <div className="modal-backdrop">
@@ -48,20 +44,25 @@ function ManageCardsModal({ account, onClose, onCreateCard, onDeleteCard }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {cards.map((pan, index) => (
-                                <tr key={pan || index}>
-                                    <td>{maskPan(pan)}</td>
-                                    <td>
-                                        <button
-                                            onClick={() => handleDeleteCard(pan)}
-                                            disabled={cardToDelete === pan}
-                                            className="btn-danger"
-                                        >
-                                            {cardToDelete === pan ? "Eliminando..." : "Eliminar"}
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {cards.map((item, index) => {
+                                // Manejar si el item es un objeto { PAN: "..." } o un string directo
+                                const panString = typeof item === "object" ? (item.PAN || item.pan) : item;
+
+                                return (
+                                    <tr key={panString || index}>
+                                        <td style={{ fontFamily: "monospace", fontSize: "1.1em" }}>{panString}</td>
+                                        <td>
+                                            <button
+                                                onClick={() => handleDeleteCard(panString)}
+                                                disabled={cardToDelete === panString}
+                                                className="btn-danger"
+                                            >
+                                                {cardToDelete === panString ? "Eliminando..." : "Eliminar"}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 )}

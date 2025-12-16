@@ -55,9 +55,9 @@ function AccountTable({ accounts, onToggleBlock, onDelete, onEdit, onManageCards
                         </td>
                         <td>
                             <button
-                                className="btn-link"
+                                className="card-action-btn card-action-cards"
                                 onClick={() => onManageCards(account)}
-                                title="Gestionar tarjetas"
+                                title="Ver tarjetas"
                             >
                                 {account.cards?.length || 0} tarjeta(s)
                             </button>
@@ -75,14 +75,32 @@ function AccountTable({ accounts, onToggleBlock, onDelete, onEdit, onManageCards
                             </span>
                         </td>
                         <td>
-                            <button onClick={() => onToggleBlock(account)}>
-                                {account.isBlocked ? "Desbloquear" : "Bloquear"}
-                            </button>
-                            <button onClick={() => onUpdateBalance(account)}>
-                                Operar
-                            </button>
-                            <button onClick={() => onEdit(account)}>Editar</button>
-                            <button onClick={() => onDelete(account)}>Borrar</button>
+                            <div className="cards-table-actions">
+                                <button
+                                    className="card-action-btn card-action-freeze"
+                                    onClick={() => onToggleBlock(account)}
+                                >
+                                    {account.isBlocked ? "Desbloquear" : "Bloquear"}
+                                </button>
+                                <button
+                                    className="card-action-btn card-action-fund"
+                                    onClick={() => onUpdateBalance(account)}
+                                >
+                                    Añadir fondos
+                                </button>
+                                <button
+                                    className="card-action-btn card-action-edit"
+                                    onClick={() => onEdit(account)}
+                                >
+                                    Editar
+                                </button>
+                                <button
+                                    className="card-action-btn card-action-delete"
+                                    onClick={() => onDelete(account)}
+                                >
+                                    Borrar
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 ))}
