@@ -1,0 +1,122 @@
+.cards-page {
+  padding: 2.5rem 0 3.5rem;
+}
+
+/* Cabecera */
+.cards-header {
+  margin-bottom: 1.75rem;
+}
+
+.cards-header h1 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+  margin-bottom: 0.4rem;
+}
+
+.cards-header p {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* Tarjeta de acciones (filtros + botones) */
+
+.cards-actions-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 1.4rem 1.6rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  margin-bottom: 1.9rem;
+}
+
+.cards-filter-form {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+/* Select titular */
+
+.holder-select-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.holder-select-label span {
+  font-weight: 500;
+}
+
+.holder-select {
+  min-width: 220px;
+  padding: 0.55rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 0.9rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.holder-select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+  background: #ffffff;
+}
+
+/* Botones de acciones */
+
+.cards-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Tarjeta que envuelve la tabla */
+
+.cards-table-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 1.4rem 1.6rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* Estados */
+
+.cards-error {
+  margin-bottom: 1rem;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  font-size: 0.9rem;
+}
+
+.cards-loading {
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+/* Responsivo */
+
+@media (max-width: 768px) {
+  .cards-filter-form {
+    align-items: flex-start;
+  }
+
+  .cards-buttons {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}

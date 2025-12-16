@@ -1,0 +1,215 @@
+/* Contenedor para scroll horizontal si hace falta */
+.cards-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Tabla principal */
+.cards-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* columnas con anchura estable */
+  font-size: 0.9rem;
+}
+
+/* Cabeceras */
+.cards-table thead th {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  background: #f9fafb;
+}
+
+/* Celdas */
+.cards-table tbody td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+/* Zebra y hover */
+.cards-table tbody tr:nth-child(even) {
+  background: #fcfcfc;
+}
+
+.cards-table tbody tr:hover {
+  background: #f3f4ff;
+}
+
+/* Mensaje sin datos */
+.cards-empty {
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+/* Píldoras de estado */
+.card-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.3rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.card-status-pill--ok {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.card-status-pill--frozen {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+/* Columna de acciones: botones en fila */
+.cards-table-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+}
+
+/* Botones de acción de la tabla */
+.card-action-btn {
+  display: inline-flex;          /* importante para que width funcione */
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap; /* evita que el texto salte de línea */
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease,
+    transform 0.06s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+/* Hacemos que Congelar / Descongelar ocupen lo mismo */
+.card-action-freeze {
+  width: 7.6rem;        /* mismo ancho para ambos textos */
+  text-align: center;
+  background: #eef2ff;
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+}
+
+.card-action-freeze:hover {
+  background: #e0e7ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(129, 140, 248, 0.5);
+}
+
+/* Editar */
+.card-action-edit {
+  background: #ecfeff;
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.card-action-edit:hover {
+  background: #e0f2fe;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(56, 189, 248, 0.4);
+}
+
+/* Borrar */
+.card-action-delete {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.card-action-delete:hover {
+  background: #fee2e2;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(248, 113, 113, 0.45);
+}
+
+/* Ajustes responsive */
+@media (max-width: 768px) {
+  .cards-table thead {
+    font-size: 0.75rem;
+  }
+
+  .cards-table tbody td {
+    padding: 0.45rem 0.55rem;
+  }
+
+  .cards-table-actions {
+    gap: 0.25rem;
+  }
+}
+
+/* Reparto de anchuras por columna */
+.cards-table th:nth-child(1),
+.cards-table td:nth-child(1) {
+  width: 20%;  /* ID */
+}
+
+.cards-table th:nth-child(2),
+.cards-table td:nth-child(2) {
+  width: 6%;   /* card_id */
+}
+
+.cards-table th:nth-child(3),
+.cards-table td:nth-child(3) {
+  width: 15%;  /* TITULAR */
+}
+
+.cards-table th:nth-child(4),
+.cards-table td:nth-child(4) {
+  width: 16%;  /* PAN */
+}
+
+.cards-table th:nth-child(5),
+.cards-table td:nth-child(5) {
+  width: 8%;   /* EXPIRA */
+}
+
+.cards-table th:nth-child(6),
+.cards-table td:nth-child(6) {
+  width: 6%;   /* CVC */
+}
+
+.cards-table th:nth-child(7),
+.cards-table td:nth-child(7) {
+  width: 12%;  /* ESTADO */
+}
+
+/* ACCIONES: le damos aire de verdad */
+.cards-table th:nth-child(8),
+.cards-table td:nth-child(8) {
+  width: 27%;  /* ACCIONES más ancho */
+}
+
+/* Evitar que el contenido se meta en otras columnas:
+   recortamos con puntos suspensivos */
+.cards-table th,
+.cards-table td {
+  overflow: hidden;
+}
+
+/* ID, TITULAR y PAN: texto largo → ellipsis */
+.cards-table td:nth-child(1),
+.cards-table td:nth-child(3),
+.cards-table td:nth-child(4),
+.cards-table th:nth-child(1),
+.cards-table th:nth-child(3),
+.cards-table th:nth-child(4) {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

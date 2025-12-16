@@ -8,7 +8,7 @@ body {
 }
 
 .app {
-  max-width: 1200px;
+  max-width: 2000px;
   margin: 0 auto;
   padding: 1.5rem;
 }
@@ -269,6 +269,43 @@ body {
 
 /* Contenedor central; si quieres aún más ancho, sube el max-width */
 .page-inner {
-  max-width: 3000px;
+  max-width: 5500px;
   margin: 0 auto;
+}
+
+/* Layout general de la app */
+
+.app {
+  min-height: 100vh;
+  background: #f3f4f6;
+}
+
+.app-main {
+  padding: 0 0 3rem;
+}
+
+
+.page-inner {
+  width: 1200px;     
+  margin: 0;                
+  padding: 0 3rem;          
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .page-inner {
+    padding: 0 1.25rem;
+  }
+}
+
+.app-main{
+  width: 100%;
+}
+
+.page-inner{
+  width: 1200px;
+  max-width: none;          /* clave: quitamos límite */
+  margin: 0;                /* sin centrado que estreche */
+  padding: 0 24px;          /* opcional: aire lateral */
+  box-sizing: border-box;
 }
