@@ -15,11 +15,33 @@ if (typeof import.meta !== "undefined" && import.meta.env) {
   }
 }
 
+let authToken = null;
+
+function getStoredToken() {
+  if (!authToken && typeof localStorage !== "undefined") {
+    authToken = localStorage.getItem("authToken");
+  }
+  return authToken;
+}
+
+export function setAuthToken(token) {
+  authToken = token;
+  if (typeof localStorage !== "undefined") {
+    if (token) {
+      localStorage.setItem("authToken", token);
+    } else {
+      localStorage.removeItem("authToken");
+    }
+  }
+}
+
 // Helper genérico para peticiones
 async function apiRequest(path, options = {}) {
+  const token = getStoredToken();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
@@ -33,7 +55,11 @@ async function apiRequest(path, options = {}) {
   }
 
   if (!res.ok) {
-    const error = new Error(data?.error || res.statusText || "Error en la API");
+    const message =
+      data?.message || data?.error || res.statusText || "Error en la API";
+    const error = new Error(
+      Array.isArray(message) ? message.join(", ") : message
+    );
     error.status = res.status;
     error.data = data;
     throw error;
@@ -140,10 +166,25 @@ export const accountsApi = {
     }),
 };
 
-// Endpoints de salud
-export const healthApi = {
-  pingCache: () => apiRequest("/ping/cache"),
-  health: () => apiRequest("/health"),
+// Endpoints de autenticación
+export const authApi = {
+  login: (email, password) =>
+    apiRequest("/user-auth/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    }),
+  register: ({ email, name, password, phoneNumber }) =>
+    apiRequest("/user-auth/users", {
+      method: "POST",
+      body: JSON.stringify({ email, name, password, phoneNumber }),
+    }),
 };
 
-export { API_BASE };
+// Endpoints de salud por microservicio
+export const healthApi = {
+  accounts: () => apiRequest("/accounts/health"),
+  userAuth: () => apiRequest("/user-auth/health"),
+  cache: () => apiRequest("/ping/cache"),
+};
+
+export { API_BASE, getStoredToken };

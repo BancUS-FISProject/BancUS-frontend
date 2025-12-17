@@ -2,13 +2,13 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import "./Navbar.css";
 
-function Navbar({ isLoggedIn }) {
+function Navbar({ isLoggedIn, onLogout }) {
   if (!isLoggedIn) return null;
 
   return (
     <header className="navbar">
       <div className="page-inner">
-        <div className="navbar-card">
+        <div className="navbar-card navbar-inner">
           <div className="navbar-brand">Mi Banco Demo</div>
 
           <nav
@@ -89,6 +89,11 @@ function Navbar({ isLoggedIn }) {
               Pricing
             </NavLink>
           </nav>
+        </div>
+        <div className="navbar-actions navbar-actions--below">
+          <button type="button" className="logout-button" onClick={onLogout}>
+            Cerrar sesión
+          </button>
         </div>
       </div>
     </header>
