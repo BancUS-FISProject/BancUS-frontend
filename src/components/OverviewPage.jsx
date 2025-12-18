@@ -129,6 +129,22 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   };
 
+  const getInitials = (text) => {
+    if (!text) return "B";
+    const initials = text
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+    return initials || (text[0] || "B").toUpperCase();
+  };
+
+  const displayName = userInfo?.name || "Cliente BancUS";
+  const displayEmail = userInfo?.email || "Correo no disponible";
+  const displayPhone = userInfo?.phoneNumber || "Teléfono no registrado";
+  const initials = getInitials(userInfo?.name || userInfo?.email || "BancUS");
+
   return (
     <div className="overview-page">
       {/* LOGIN solo cuando no hay sesión */}
@@ -317,6 +333,22 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
       {/* RESTO DE SECCIONES: solo con login */}
       {isLoggedIn && (
         <>
+          {/* Perfil de usuario */}
+          <ScrollSection
+            id="user-profile"
+            title="Tu cuenta"
+            subtitle="Datos de usuario"
+          >
+            <div className="profile-panel">
+              <div className="avatar-circle">{initials}</div>
+              <div className="profile-data">
+                <span className="profile-name">{displayName}</span>
+                <span className="profile-email">{displayEmail}</span>
+                <span className="profile-phone">{displayPhone}</span>
+              </div>
+            </div>
+          </ScrollSection>
+
           {/* Resumen de cuenta */}
           <ScrollSection
             id="account"
