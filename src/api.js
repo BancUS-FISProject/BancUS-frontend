@@ -15,9 +15,18 @@ if (typeof import.meta !== "undefined" && import.meta.env) {
   }
 }
 
+// Detectamos URL base para el microservicio de transferencias
+let TRANSFERS_API_BASE = "http://localhost:8001/v1";
+if (typeof import.meta !== "undefined" && import.meta.env) {
+  if (import.meta.env.VITE_TRANSFERS_API_BASE_URL) {
+    TRANSFERS_API_BASE = import.meta.env.VITE_TRANSFERS_API_BASE_URL;
+  }
+}
+
 // Helper genérico para peticiones
 async function apiRequest(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const baseUrl = options.baseUrl || API_BASE;
+  const res = await fetch(`${baseUrl}${path}`, {
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -137,6 +146,43 @@ export const accountsApi = {
     apiRequest(`/accounts/card/${encodeURIComponent(iban)}`, {
       method: "DELETE",
       body: JSON.stringify({ PAN: pan }),
+    }),
+};
+
+// Endpoints específicos para transferencias
+export const transfersApi = {
+  // Obtener transferencias enviadas por un usuario
+  getSent: (iban) =>
+    apiRequest(`/transactions/user/${encodeURIComponent(iban)}/sent`, { baseUrl: TRANSFERS_API_BASE }),
+
+  // Obtener transferencias recibidas por un usuario
+  getReceived: (iban) =>
+    apiRequest(`/transactions/user/${encodeURIComponent(iban)}/received`, { baseUrl: TRANSFERS_API_BASE }),
+
+  // Obtener TODAS las transferencias de un usuario (enviadas y recibidas)
+  getByUser: (iban) =>
+    apiRequest(`/transactions/user/${encodeURIComponent(iban)}`, { baseUrl: TRANSFERS_API_BASE }),
+
+  // Revertir una transacción
+  revert: (id) =>
+    apiRequest(`/transactions/${id}`, {
+      method: "PATCH",
+      baseUrl: TRANSFERS_API_BASE,
+    }),
+
+  // Eliminar una transacción
+  delete: (id) =>
+    apiRequest(`/transactions/${id}`, {
+      method: "DELETE",
+      baseUrl: TRANSFERS_API_BASE,
+    }),
+
+  // Crea una transferencia (payload: { sender, receiver, quantity })
+  create: (data) =>
+    apiRequest("/transactions/", {
+      method: "POST",
+      body: JSON.stringify(data),
+      baseUrl: TRANSFERS_API_BASE,
     }),
 };
 
