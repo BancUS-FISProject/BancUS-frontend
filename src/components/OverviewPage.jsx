@@ -96,18 +96,39 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     setFormSuccess("");
     setFormLoading(true);
 
+    const formatError = (err) => {
+      const msg = err?.message?.toLowerCase?.() || "";
+      if (msg.includes("duplicate value")) {
+        return "Ya existe un usuario con esos datos (email o teléfono).";
+      }
+      if (msg.includes("iban")) {
+        return "Hubo un problema generando el IBAN. Inténtalo de nuevo.";
+      }
+      return err?.message || "Error en la autenticación";
+    };
+
     try {
       if (mode === "login") {
         const res = await authApi.login(loginForm.email, loginForm.password);
         onLogin && onLogin(res.access_token);
-        const guessName =
-          loginForm.email?.split("@")?.[0]?.replace(/\./g, " ") ||
-          "Cliente BancUS";
-        persistUserInfo({
-          name: guessName,
-          email: loginForm.email,
-          phoneNumber: "No disponible",
-        });
+        try {
+          const profile = await authApi.getUserByIdentifier(loginForm.email);
+          persistUserInfo({
+            name: profile.name,
+            email: profile.email,
+            phoneNumber: profile.phoneNumber,
+            iban: profile.iban,
+          });
+        } catch {
+          const guessName =
+            loginForm.email?.split("@")?.[0]?.replace(/\./g, " ") ||
+            "Cliente BancUS";
+          persistUserInfo({
+            name: guessName,
+            email: loginForm.email,
+            phoneNumber: "No disponible",
+          });
+        }
       } else {
         await authApi.register(registerForm);
         const res = await authApi.login(
@@ -116,14 +137,26 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         );
         onLogin && onLogin(res.access_token);
         setFormSuccess("Cuenta creada y sesión iniciada.");
-        persistUserInfo({
-          name: registerForm.name,
-          email: registerForm.email,
-          phoneNumber: registerForm.phoneNumber,
-        });
+        try {
+          const profile = await authApi.getUserByIdentifier(
+            registerForm.email
+          );
+          persistUserInfo({
+            name: profile.name,
+            email: profile.email,
+            phoneNumber: profile.phoneNumber,
+            iban: profile.iban,
+          });
+        } catch {
+          persistUserInfo({
+            name: registerForm.name,
+            email: registerForm.email,
+            phoneNumber: registerForm.phoneNumber,
+          });
+        }
       }
     } catch (err) {
-      setFormError(err.message || "Error en la autenticación");
+      setFormError(formatError(err));
     } finally {
       setFormLoading(false);
     }
@@ -152,7 +185,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         <ScrollSection
           id="login"
           title="Accede a tu banca online"
-          subtitle="Autenticación contra el microservicio user-auth."
+          subtitle="Autenticación segura para tu cuenta."
         >
           <div className="login-panel">
             <div className="form-toggle">

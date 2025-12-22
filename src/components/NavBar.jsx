@@ -54,7 +54,7 @@ function Navbar({ isLoggedIn, onLogout }) {
                 "nav-link" + (isActive ? " nav-link--active" : "")
               }
             >
-              Logins
+              Perfil
             </NavLink>
             <NavLink
               to="/payments"

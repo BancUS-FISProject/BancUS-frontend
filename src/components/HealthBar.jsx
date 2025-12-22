@@ -32,7 +32,7 @@ function HealthBar() {
     } catch (err) {
       console.error(err);
       setUserAuthStatus("DOWN");
-      setError((prev) => prev || "Error al comprobar user-auth");
+      setError((prev) => prev || "Error al comprobar auth");
     }
 
     try {
@@ -72,7 +72,7 @@ function HealthBar() {
     }
   }
 
-  // Chip de user-auth
+  // Chip de auth
   let userAuthText = "...";
   let userAuthClass = "hb-chip hb-chip--neutral";
   if (userAuthStatus) {
@@ -125,7 +125,7 @@ function HealthBar() {
           </button>
 
           <span className={accountsClass}>accounts: {accountsText}</span>
-          <span className={userAuthClass}>user-auth: {userAuthText}</span>
+          <span className={userAuthClass}>auth: {userAuthText}</span>
           <span className={cacheClass}>cache: {cacheText}</span>
 
           {error && (

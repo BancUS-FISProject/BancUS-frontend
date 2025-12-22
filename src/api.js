@@ -224,6 +224,13 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ email, name, password, phoneNumber }),
     }),
+  getUserByIdentifier: (identifier) =>
+    apiRequest(`/user-auth/users/${encodeURIComponent(identifier)}`),
+  patchUser: (iban, field, value) =>
+    apiRequest(`/user-auth/users/${encodeURIComponent(iban)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ field, value }),
+    }),
 };
 
 // Endpoints de salud por microservicio
