@@ -1,16 +1,53 @@
-# React + Vite
+# BancUS Frontend (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interfaz web para la demo de microservicios BancUS. Consume:
+- Cuentas y autenticación a través del API Gateway (`http://localhost:10000/v1`).
+- Tarjetas y transferencias contra sus servicios desplegados aparte (puertos propios).
 
-Currently, two official plugins are available:
+## Requisitos
+- Node.js 18+ y npm
+- Backend levantado (ver abajo)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Arranque rápido
+```bash
+cd BancUS-frontend
+npm install
+# Dev con HMR
+npm run dev
+# Build producción
+npm run build && npm run preview
+```
+Por defecto apunta a `http://localhost:10000/v1`. Puedes ajustar la URL base con variables de entorno.
 
-## React Compiler
+## Variables de entorno
+- `VITE_API_BASE_URL` (opcional): base para gateway (`http://localhost:10000/v1` por defecto).
+- `VITE_TRANSFERS_API_BASE_URL` (opcional): base para microservice-transfers (`http://localhost:8001/v1` por defecto).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Backend esperado
+- **API Gateway** (nginx) en `:10000`, con upstreams activos para:
+  - `accounts` → `/accounts`
+  - `user-auth` → `/user-auth` (login, registro, perfil, patch)
+- **Tarjetas**: servicio `microservice-cards` desplegado aparte (puerto 3000 por defecto en su repo). El gateway actual no lo expone; ajústalo o apunta el front a ese host/puerto.
+- **Transferencias**: servicio `microservice-transfers` desplegado aparte en `:8001` (o la URL que definas en `VITE_TRANSFERS_API_BASE_URL`); no pasa por el gateway.
 
-## Expanding the ESLint configuration
+Para levantar todo lo del gateway:
+```bash
+cd api-gateway
+docker compose up -d
+# si actualizas imágenes, añade --pull o --build y --force-recreate
+```
+Para transfers (si no está detrás del gateway), levántalo en su repo y expón `http://localhost:8001/v1`.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Flujos principales del front
+- **Login/Registro**: `/user-auth/auth/login` y `/user-auth/users`. Guarda token en `localStorage` (`authToken`) y perfil en `authUser` (incluye IBAN).
+- **Perfil**: consulta y actualiza datos de usuario por IBAN mediante `/user-auth/users/{identifier}` y PATCH.
+- **Cuentas**: peticiones al gateway sobre `/accounts`.
+- **Tarjetas**: peticiones al servicio de tarjetas (expón su puerto y, si quieres, proxéalo en el gateway).
+- **Transferencias**: peticiones a `VITE_TRANSFERS_API_BASE_URL` (`/transactions` en `:8001` por defecto).
+
+Si algún microservicio no está disponible, ciertas pantallas mostrarán datos estáticos o errores controlados.
+
+## Notas
+- Token JWT se lee de `localStorage` y se envía en `Authorization: Bearer` cuando existe.
+- IBAN se genera en backend; el front no lo envía en el alta.
+- Para limpiar estado local, borra `authToken` y `authUser` del `localStorage`.
