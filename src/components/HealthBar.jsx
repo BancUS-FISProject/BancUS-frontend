@@ -4,31 +4,48 @@ import { healthApi, API_BASE } from "../api";
 import "../HealthBar.css";
 
 function HealthBar() {
-  const [cacheOk, setCacheOk] = useState(null);
-  const [healthInfo, setHealthInfo] = useState(null);
+  const [accountsStatus, setAccountsStatus] = useState(null);
+  const [userAuthStatus, setUserAuthStatus] = useState(null);
+  const [cacheStatus, setCacheStatus] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   async function checkHealth() {
     setLoading(true);
     setError(null);
+    setAccountsStatus(null);
+    setUserAuthStatus(null);
+    setCacheStatus(null);
 
     try {
-      // Si no lanza error, asumimos que la caché responde.
-      await healthApi.pingCache();
-      setCacheOk(true);
+      const acc = await healthApi.accounts();
+      setAccountsStatus(acc?.status || "UP");
     } catch (err) {
       console.error(err);
-      setCacheOk(false);
-      setError("Error al comprobar la caché");
+      setAccountsStatus("DOWN");
+      setError((prev) => prev || "Error al comprobar accounts");
     }
 
     try {
-      const data = await healthApi.health();
-      setHealthInfo(data);
+      const auth = await healthApi.userAuth();
+      setUserAuthStatus(auth?.status || "UP");
     } catch (err) {
       console.error(err);
-      setError((prev) => prev || "Error al comprobar el estado general");
+      setUserAuthStatus("DOWN");
+      setError((prev) => prev || "Error al comprobar auth");
+    }
+
+    try {
+      const cache = await healthApi.cache();
+      const ok = cache?.ok === true || cache?.cache === "ok";
+      setCacheStatus(ok ? "UP" : "DOWN");
+      if (!ok) {
+        setError((prev) => prev || "Caché Redis no disponible");
+      }
+    } catch (err) {
+      console.error(err);
+      setCacheStatus("DOWN");
+      setError((prev) => prev || "Caché Redis no disponible");
     } finally {
       setLoading(false);
     }
@@ -38,36 +55,56 @@ function HealthBar() {
     checkHealth();
   }, []);
 
-  // Chip de caché
+  // Chip accounts
+  let accountsText = "...";
+  let accountsClass = "hb-chip hb-chip--neutral";
+  if (accountsStatus) {
+    const normalized = String(accountsStatus).toUpperCase();
+    if (normalized === "UP" || normalized === "OK") {
+      accountsText = "UP";
+      accountsClass = "hb-chip hb-chip--ok";
+    } else if (normalized === "STARTING") {
+      accountsText = "STARTING";
+      accountsClass = "hb-chip hb-chip--neutral";
+    } else {
+      accountsText = normalized;
+      accountsClass = "hb-chip hb-chip--error";
+    }
+  }
+
+  // Chip de auth
+  let userAuthText = "...";
+  let userAuthClass = "hb-chip hb-chip--neutral";
+  if (userAuthStatus) {
+    const normalized = String(userAuthStatus).toUpperCase();
+    if (normalized === "UP" || normalized === "OK") {
+      userAuthText = "UP";
+      userAuthClass = "hb-chip hb-chip--ok";
+    } else if (normalized === "STARTING") {
+      userAuthText = "STARTING";
+      userAuthClass = "hb-chip hb-chip--neutral";
+    } else {
+      userAuthText = normalized;
+      userAuthClass = "hb-chip hb-chip--error";
+    }
+  }
+
+  // Chip de caché (Redis)
   let cacheText = "...";
   let cacheClass = "hb-chip hb-chip--neutral";
-  if (cacheOk === true) {
-    cacheText = "OK";
-    cacheClass = "hb-chip hb-chip--ok";
-  } else if (cacheOk === false) {
-    cacheText = "ERROR";
-    cacheClass = "hb-chip hb-chip--error";
+  if (cacheStatus) {
+    const normalized = String(cacheStatus).toUpperCase();
+    if (normalized === "UP" || normalized === "OK" || normalized === "TRUE") {
+      cacheText = "UP";
+      cacheClass = "hb-chip hb-chip--ok";
+    } else if (normalized === "STARTING") {
+      cacheText = "STARTING";
+      cacheClass = "hb-chip hb-chip--neutral";
+    } else {
+      cacheText = normalized;
+      cacheClass = "hb-chip hb-chip--error";
+    }
   }
-
-  // Chip de DB (si viene en el health)
-  const dbStatus =
-    healthInfo && (healthInfo.db ?? healthInfo.database ?? healthInfo.dbStatus);
-  let dbText = "...";
-  let dbClass = "hb-chip hb-chip--neutral";
-  if (dbStatus === "ok" || dbStatus === true) {
-    dbText = "OK";
-    dbClass = "hb-chip hb-chip--ok";
-  } else if (dbStatus != null) {
-    dbText = String(dbStatus);
-    dbClass = "hb-chip hb-chip--error";
-  }
-
-  // Chip global
-  const okGlobal =
-    healthInfo && (healthInfo.ok === true || healthInfo.status === "ok");
-  const globalClass = okGlobal
-    ? "hb-chip hb-chip--ok"
-    : "hb-chip hb-chip--neutral";
 
   return (
     <div className="healthbar">
@@ -87,14 +124,9 @@ function HealthBar() {
             {loading ? "Comprobando..." : "Refrescar estado"}
           </button>
 
-          <span className={cacheClass}>Caché: {cacheText}</span>
-          {healthInfo && <span className={dbClass}>DB: {dbText}</span>}
-
-          {healthInfo && (
-            <span className={globalClass}>
-              Health: <code>{JSON.stringify(healthInfo)}</code>
-            </span>
-          )}
+          <span className={accountsClass}>accounts: {accountsText}</span>
+          <span className={userAuthClass}>auth: {userAuthText}</span>
+          <span className={cacheClass}>cache: {cacheText}</span>
 
           {error && (
             <span className="hb-chip hb-chip--error hb-error-text">

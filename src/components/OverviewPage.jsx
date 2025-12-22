@@ -1,10 +1,8 @@
 // src/components/OverviewPage.jsx
 import React, { useState } from "react";
+import { authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
-
-const DEMO_EMAIL = "demo@bancus.test";
-const DEMO_PASSWORD = "bancus123";
 
 const PLANS = [
   {
@@ -46,106 +44,273 @@ const PLANS = [
 ];
 
 function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
-  const [loginError, setLoginError] = useState("");
+  const [mode, setMode] = useState("login"); // login | register
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [registerForm, setRegisterForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    phoneNumber: "",
+  });
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
+  const [formLoading, setFormLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState(() => {
+    if (typeof localStorage === "undefined") return null;
+    try {
+      const stored = localStorage.getItem("authUser");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
 
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const email = formData.get("email");
-    const password = formData.get("password");
+  const persistUserInfo = (info) => {
+    setUserInfo(info);
+    if (typeof localStorage !== "undefined") {
+      if (info) {
+        localStorage.setItem("authUser", JSON.stringify(info));
+      } else {
+        localStorage.removeItem("authUser");
+      }
+    }
+  };
 
-    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      setLoginError("");
-      onLogin && onLogin();
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (mode === "login") {
+      setLoginForm((prev) => ({ ...prev, [name]: value }));
     } else {
-      setLoginError(
-        "Credenciales incorrectas. Revisa el usuario y la contraseña."
-      );
+      setRegisterForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleLogout = () => {
     onLogout && onLogout();
+    persistUserInfo(null);
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError("");
+    setFormSuccess("");
+    setFormLoading(true);
+
+    const formatError = (err) => {
+      const msg = err?.message?.toLowerCase?.() || "";
+      if (msg.includes("duplicate value")) {
+        return "Ya existe un usuario con esos datos (email o teléfono).";
+      }
+      if (msg.includes("iban")) {
+        return "Hubo un problema generando el IBAN. Inténtalo de nuevo.";
+      }
+      return err?.message || "Error en la autenticación";
+    };
+
+    try {
+      if (mode === "login") {
+        const res = await authApi.login(loginForm.email, loginForm.password);
+        onLogin && onLogin(res.access_token);
+        try {
+          const profile = await authApi.getUserByIdentifier(loginForm.email);
+          persistUserInfo({
+            name: profile.name,
+            email: profile.email,
+            phoneNumber: profile.phoneNumber,
+            iban: profile.iban,
+          });
+        } catch {
+          const guessName =
+            loginForm.email?.split("@")?.[0]?.replace(/\./g, " ") ||
+            "Cliente BancUS";
+          persistUserInfo({
+            name: guessName,
+            email: loginForm.email,
+            phoneNumber: "No disponible",
+          });
+        }
+      } else {
+        await authApi.register(registerForm);
+        const res = await authApi.login(
+          registerForm.email,
+          registerForm.password
+        );
+        onLogin && onLogin(res.access_token);
+        setFormSuccess("Cuenta creada y sesión iniciada.");
+        try {
+          const profile = await authApi.getUserByIdentifier(
+            registerForm.email
+          );
+          persistUserInfo({
+            name: profile.name,
+            email: profile.email,
+            phoneNumber: profile.phoneNumber,
+            iban: profile.iban,
+          });
+        } catch {
+          persistUserInfo({
+            name: registerForm.name,
+            email: registerForm.email,
+            phoneNumber: registerForm.phoneNumber,
+          });
+        }
+      }
+    } catch (err) {
+      setFormError(formatError(err));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const getInitials = (text) => {
+    if (!text) return "B";
+    const initials = text
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("");
+    return initials || (text[0] || "B").toUpperCase();
+  };
+
+  const displayName = userInfo?.name || "Cliente BancUS";
+  const displayEmail = userInfo?.email || "Correo no disponible";
+  const displayPhone = userInfo?.phoneNumber || "Teléfono no registrado";
+  const initials = getInitials(userInfo?.name || userInfo?.email || "BancUS");
 
   return (
     <div className="overview-page">
-      {/* LOGIN (siempre visible) */}
-      <ScrollSection
-        id="login"
-        title="Accede a tu banca online"
-        subtitle="Formulario de acceso simulado (solo interfaz)."
-      >
-        <div className="login-panel">
-          <form onSubmit={handleLoginSubmit}>
-            <div className="form-row">
-              <label>
-                Usuario o correo electrónico
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="tucorreo@example.com"
-                  required
-                />
-              </label>
-            </div>
-
-            <div className="form-row">
-              <label>
-                Contraseña
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="••••••••"
-                  required
-                />
-              </label>
-            </div>
-
-            <div className="form-row form-row-inline">
-              <label className="checkbox">
-                <input type="checkbox" />
-                <span>Recordarme en este dispositivo</span>
-              </label>
-              <button type="button" className="link-button">
-                ¿Has olvidado la contraseña?
-              </button>
-            </div>
-
-            {loginError && <p className="error-message">{loginError}</p>}
-
-            <div className="form-row form-buttons">
-              <button type="submit" className="btn-primary">
+      {/* LOGIN solo cuando no hay sesión */}
+      {!isLoggedIn && (
+        <ScrollSection
+          id="login"
+          title="Accede a tu banca online"
+          subtitle="Autenticación segura para tu cuenta."
+        >
+          <div className="login-panel">
+            <div className="form-toggle">
+              <button
+                type="button"
+                className={mode === "login" ? "toggle-btn active" : "toggle-btn"}
+                onClick={() => {
+                  setMode("login");
+                  setFormError("");
+                  setFormSuccess("");
+                }}
+              >
                 Iniciar sesión
               </button>
               <button
                 type="button"
-                className="btn-secondary"
-                onClick={() => {}}
+                className={
+                  mode === "register" ? "toggle-btn active" : "toggle-btn"
+                }
+                onClick={() => {
+                  setMode("register");
+                  setFormError("");
+                  setFormSuccess("");
+                }}
               >
-                Entrar con Google
+                Crear cuenta
               </button>
             </div>
 
-            <p className="muted">
-              Usuario de prueba: <code>{DEMO_EMAIL}</code> · Contraseña:{" "}
-              <code>{DEMO_PASSWORD}</code>
-            </p>
+            <form onSubmit={handleSubmit}>
+              {mode === "register" && (
+                <div className="form-row">
+                  <label>
+                    Nombre
+                    <input
+                      type="text"
+                      name="name"
+                      value={registerForm.name}
+                      placeholder="Tu nombre"
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </label>
+                </div>
+              )}
 
-            {isLoggedIn && (
               <div className="form-row">
+                <label>
+                  Usuario o correo electrónico
+                  <input
+                    type="email"
+                    name="email"
+                    value={mode === "login" ? loginForm.email : registerForm.email}
+                    placeholder="tucorreo@example.com"
+                    required
+                    onChange={handleInputChange}
+                  />
+                </label>
+              </div>
+
+              <div className="form-row">
+                <label>
+                  Contraseña
+                  <input
+                    type="password"
+                    name="password"
+                    value={
+                      mode === "login" ? loginForm.password : registerForm.password
+                    }
+                    placeholder="••••••••"
+                    required
+                    onChange={handleInputChange}
+                  />
+                </label>
+              </div>
+
+              {mode === "register" && (
+                <div className="form-row">
+                  <label>
+                    Teléfono
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={registerForm.phoneNumber}
+                      placeholder="+34123456789"
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </label>
+                </div>
+              )}
+
+              <div className="form-row form-row-inline">
+                <label className="checkbox">
+                  <input type="checkbox" />
+                  <span>Recordarme en este dispositivo</span>
+                </label>
                 <button
                   type="button"
-                  className="btn-secondary"
-                  onClick={handleLogout}
+                  className="link-button"
+                  onClick={() => setMode(mode === "login" ? "register" : "login")}
                 >
-                  Cerrar sesión
+                  {mode === "login"
+                    ? "¿No tienes cuenta? Regístrate"
+                    : "¿Ya tienes cuenta? Inicia sesión"}
                 </button>
               </div>
-            )}
-          </form>
-        </div>
-      </ScrollSection>
+
+              {formError && <p className="error-message">{formError}</p>}
+              {formSuccess && <p className="success-message">{formSuccess}</p>}
+
+              <div className="form-row form-buttons">
+                <button type="submit" className="btn-primary">
+                  {formLoading
+                    ? "Procesando..."
+                    : mode === "login"
+                    ? "Iniciar sesión"
+                    : "Crear cuenta"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </ScrollSection>
+      )}
+
 
       {/* PRICING: solo cuando NO hay login */}
       {!isLoggedIn && (
@@ -201,6 +366,22 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
       {/* RESTO DE SECCIONES: solo con login */}
       {isLoggedIn && (
         <>
+          {/* Perfil de usuario */}
+          <ScrollSection
+            id="user-profile"
+            title="Tu cuenta"
+            subtitle="Datos de usuario"
+          >
+            <div className="profile-panel">
+              <div className="avatar-circle">{initials}</div>
+              <div className="profile-data">
+                <span className="profile-name">{displayName}</span>
+                <span className="profile-email">{displayEmail}</span>
+                <span className="profile-phone">{displayPhone}</span>
+              </div>
+            </div>
+          </ScrollSection>
+
           {/* Resumen de cuenta */}
           <ScrollSection
             id="account"
