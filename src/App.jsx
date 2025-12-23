@@ -7,7 +7,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import HealthBar from "./components/HealthBar";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/NavBar";
 import OverviewPage from "./components/OverviewPage";
 import AccountsPage from "./components/AccountsPage";
 import TransactionsPage from "./components/TransactionsPage";
@@ -19,12 +19,22 @@ import CardsPage from "./components/CardsPage";
 import PricingPage from "./pages/PricingPage";
 import StatementsPage from "./pages/StatementsPage";
 import "./App.css";
+import { getStoredToken, setAuthToken } from "./api";
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getStoredToken()));
 
-  const handleLogin = () => setIsLoggedIn(true);
-  const handleLogout = () => setIsLoggedIn(false);
+  const handleLogin = (token) => {
+    if (token) {
+      setAuthToken(token);
+    }
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    setAuthToken(null);
+    setIsLoggedIn(false);
+  };
 
   const ProtectedRoute = ({ element }) =>
     isLoggedIn ? element : <Navigate to="/" replace />;
@@ -35,7 +45,7 @@ function App() {
         <HealthBar />
 
         {/* Navbar solo si hay login */}
-        <Navbar isLoggedIn={isLoggedIn} />
+        <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
         <main className="app-main">
           <div className="page-inner">

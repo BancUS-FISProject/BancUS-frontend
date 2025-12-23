@@ -69,6 +69,34 @@
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.4);
 }
 
+.navbar-actions {
+  display: flex;
+  align-items: stretch;
+}
+
+.navbar-actions--below {
+  justify-content: flex-end;
+  padding-top: 0.35rem;
+}
+
+.logout-button {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #dc2626;
+  font-weight: 700;
+  border-radius: 9999px;
+  padding: 0.45rem 0.95rem;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.logout-button:hover {
+  background: #f9fafb;
+  transform: translateY(-1px);
+}
+
 /* Responsivo */
 @media (max-width: 900px) {
   .navbar-card {
@@ -79,5 +107,14 @@
 
   .navbar-links {
     justify-content: flex-start;
+  }
+
+  .navbar-actions {
+    width: 100%;
+  }
+
+  .logout-button {
+    width: 100%;
+    justify-content: center;
   }
 }
