@@ -81,6 +81,14 @@ function Navbar({ isLoggedIn, onLogout }) {
               Tarjetas
             </NavLink>
             <NavLink
+              to="/statements"
+              className={({ isActive }) =>
+                "nav-link" + (isActive ? " nav-link--active" : "")
+              }
+            >
+              Historial
+            </NavLink>
+            <NavLink
               to="/pricing"
               className={({ isActive }) =>
                 "nav-link" + (isActive ? " nav-link--active" : "")

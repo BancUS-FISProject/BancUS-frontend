@@ -17,6 +17,7 @@ import PaymentsPage from "./components/PaymentsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import CardsPage from "./components/CardsPage";
 import PricingPage from "./pages/PricingPage";
+import StatementsPage from "./pages/StatementsPage";
 import "./App.css";
 import { getStoredToken, setAuthToken } from "./api";
 
@@ -87,6 +88,11 @@ function App() {
               <Route
                 path="/cards"
                 element={<ProtectedRoute element={<CardsPage />} />}
+              />
+
+              <Route
+                path="/statements"
+                element={<ProtectedRoute element={<StatementsPage />} />}
               />
 
               {/* Página de pricing aparte (además del bloque en OverviewPage) */}
