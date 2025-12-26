@@ -214,10 +214,10 @@ export const transfersApi = {
 
 // Endpoints de autenticación
 export const authApi = {
-  login: (email, password) =>
+  login: (email, password, captchaToken) =>
     apiRequest("/user-auth/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, captchaToken }),
     }),
   register: ({ email, name, password, phoneNumber }) =>
     apiRequest("/user-auth/users", {
