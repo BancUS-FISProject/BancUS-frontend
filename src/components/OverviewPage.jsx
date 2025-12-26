@@ -1,5 +1,6 @@
 // src/components/OverviewPage.jsx
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
@@ -44,13 +45,20 @@ const PLANS = [
 ];
 
 function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
+  const siteKey = import.meta.env?.VITE_RECAPTCHA_SITE_KEY || "";
+  const recaptchaRef = useRef(null);
   const [mode, setMode] = useState("login"); // login | register
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginForm, setLoginForm] = useState({
+    email: "",
+    password: "",
+    captchaToken: "",
+  });
   const [registerForm, setRegisterForm] = useState({
     name: "",
     email: "",
     password: "",
     phoneNumber: "",
+    captchaToken: "",
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -90,6 +98,21 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     persistUserInfo(null);
   };
 
+  useEffect(() => {
+    // Reset captcha al cambiar de modo
+    recaptchaRef.current?.reset();
+    setLoginForm((prev) => ({ ...prev, captchaToken: "" }));
+    setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
+  }, [mode]);
+
+  const handleCaptchaChange = (token) => {
+    if (mode === "login") {
+      setLoginForm((prev) => ({ ...prev, captchaToken: token || "" }));
+    } else {
+      setRegisterForm((prev) => ({ ...prev, captchaToken: token || "" }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError("");
@@ -108,8 +131,19 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     };
 
     try {
+      const captchaToken =
+        mode === "login" ? loginForm.captchaToken : registerForm.captchaToken;
+      if (siteKey && !captchaToken) {
+        setFormError("Completa el captcha para continuar.");
+        return;
+      }
+
       if (mode === "login") {
-        const res = await authApi.login(loginForm.email, loginForm.password);
+        const res = await authApi.login(
+          loginForm.email,
+          loginForm.password,
+          loginForm.captchaToken
+        );
         onLogin && onLogin(res.access_token);
         try {
           const profile = await authApi.getUserByIdentifier(loginForm.email);
@@ -133,7 +167,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         await authApi.register(registerForm);
         const res = await authApi.login(
           registerForm.email,
-          registerForm.password
+          registerForm.password,
+          registerForm.captchaToken
         );
         onLogin && onLogin(res.access_token);
         setFormSuccess("Cuenta creada y sesión iniciada.");
@@ -156,9 +191,12 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         }
       }
     } catch (err) {
-      setFormError(formatError(err));
+        setFormError(formatError(err));
     } finally {
       setFormLoading(false);
+      recaptchaRef.current?.reset();
+      setLoginForm((prev) => ({ ...prev, captchaToken: "" }));
+      setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
     }
   };
 
@@ -277,6 +315,20 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                   </label>
                 </div>
               )}
+
+              <div className="form-row">
+                {siteKey ? (
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={siteKey}
+                    onChange={handleCaptchaChange}
+                  />
+                ) : (
+                  <p className="info-message">
+                    Configura VITE_RECAPTCHA_SITE_KEY para habilitar el captcha.
+                  </p>
+                )}
+              </div>
 
               <div className="form-row form-row-inline">
                 <label className="checkbox">
