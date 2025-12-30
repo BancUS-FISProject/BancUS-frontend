@@ -1,5 +1,3 @@
-// src/api.js
-
 // Detectamos la URL base de la API de forma segura
 let API_BASE = "http://localhost:10000/v1";
 
