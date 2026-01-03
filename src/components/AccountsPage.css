@@ -1,6 +1,4 @@
-/* src/components/AccountsPage.css */
-
-.accounts-page .cards-table-wrapper {
+s.accounts-page .cards-table-wrapper {
   width: 100%;
   overflow-x: auto;
 }

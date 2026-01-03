@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from "react";
 import {
   BrowserRouter as Router,
@@ -6,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import HealthBar from "./components/HealthBar";
+// import HealthBar from "./components/HealthBar";
 import Navbar from "./components/NavBar";
 import OverviewPage from "./components/OverviewPage";
 import AccountsPage from "./components/AccountsPage";
@@ -42,7 +41,7 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <HealthBar />
+        {/* <HealthBar /> */}
 
         {/* Navbar solo si hay login */}
         <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
