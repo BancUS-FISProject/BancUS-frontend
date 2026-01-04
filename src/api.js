@@ -217,6 +217,10 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify({ email, password, captchaToken }),
     }),
+  logout: () =>
+    apiRequest("/user-auth/auth/logout", {
+      method: "POST",
+    }),
   register: ({ email, name, password, phoneNumber }) =>
     apiRequest("/user-auth/users", {
       method: "POST",
