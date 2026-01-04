@@ -12,7 +12,7 @@ import AccountsPage from "./components/AccountsPage";
 import TransactionsPage from "./components/TransactionsPage";
 import FraudPage from "./components/FraudPage";
 import LoginActivityPage from "./components/LoginActivityPage";
-import PaymentsPage from "./components/PaymentsPage";
+import PaymentsPage from "./components/PaymentsPage/PaymentsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import CardsPage from "./components/CardsPage";
 import PricingPage from "./pages/PricingPage";
