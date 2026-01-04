@@ -6,8 +6,6 @@
     sans-serif;
 }
 
-/* ==== CABECERAS DE SECCIÓN (ScrollSection) ==== */
-
 .scroll-section {
   margin-bottom: 2.5rem;
 }
@@ -39,11 +37,11 @@
   font-size: 0.8rem;
 }
 
-/* ==== LOGIN ==== */
+
 
 .login-panel {
   max-width: 100%;
-  margin: 0 0 2.5rem 0; /* alineado con el contenido, sin centrado raro */
+  margin: 0 0 2.5rem 0; 
   background: #ffffff;
   border-radius: 18px;
   padding: 2rem 2.1rem;
@@ -51,7 +49,7 @@
   border: 1px solid #e5e7eb;
 }
 
-/* Cada fila del formulario */
+
 .form-row {
   display: flex;
   flex-direction: column;
@@ -61,7 +59,7 @@
   color: #111827;
 }
 
-/* Label encima del input, ocupando todo el ancho */
+
 .form-row label {
   display: flex;
   flex-direction: column;
@@ -76,7 +74,6 @@
   justify-content: space-between;
 }
 
-/* Inputs */
 
 .login-panel input[type="email"],
 .login-panel input[type="password"],
@@ -106,7 +103,6 @@
   background: #ffffff;
 }
 
-/* Checkbox + enlace contraseña */
 
 .checkbox {
   display: flex;
@@ -136,7 +132,6 @@
   color: #1d4ed8;
 }
 
-/* Botones (reutilizables en otras páginas) */
 
 .btn-primary,
 .btn-secondary {
@@ -157,7 +152,7 @@
     color 0.12s ease;
 }
 
-/* Botón de acción principal */
+
 .btn-primary {
   background: #16a34a;
   color: #ffffff;
@@ -170,7 +165,7 @@
   box-shadow: 0 14px 26px rgba(22, 163, 74, 0.4);
 }
 
-/* Botón secundario */
+
 .btn-secondary {
   background: #ffffff;
   color: #111827;
@@ -183,14 +178,14 @@
   transform: translateY(-1px);
 }
 
-/* Botonera de formulario */
+
 .form-buttons {
   display: flex;
   gap: 0.75rem;
   align-items: center;
 }
 
-/* Mensajes de error */
+
 .error-message {
   color: #b91c1c;
   font-size: 0.9rem;
@@ -234,7 +229,7 @@
   background: #e5e7eb;
 }
 
-/* Perfil resumido (modo logeado) */
+
 .profile-panel {
   background: #ffffff;
   border-radius: 18px;
@@ -284,7 +279,7 @@
   font-size: 0.95rem;
 }
 
-/* ==== TARJETAS DE INFORMACIÓN ==== */
+
 
 .two-cols,
 .list-block,
@@ -296,7 +291,7 @@
   border: 1px solid #e5e7eb;
 }
 
-/* Resumen de cuenta: dos columnas */
+
 .two-cols {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -319,7 +314,6 @@
   color: #047857;
 }
 
-/* Transacciones */
 
 .list-block {
   display: flex;
@@ -350,7 +344,6 @@
   font-weight: 600;
 }
 
-/* Notificaciones */
 
 .notifications-list {
   list-style: none;
@@ -374,7 +367,6 @@
   color: #4f46e5;
 }
 
-/* ==== PRICING (sin login) ==== */
 
 .pricing-grid {
   display: grid;
@@ -472,7 +464,6 @@
   margin-top: 0.25rem;
 }
 
-/* ==== RESPONSIVO ==== */
 
 @media (max-width: 768px) {
   .overview-page {

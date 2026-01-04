@@ -1,5 +1,3 @@
-// src/api.js
-
 // Detectamos la URL base de la API de forma segura
 let API_BASE = "http://localhost:10000/v1";
 
@@ -218,6 +216,10 @@ export const authApi = {
     apiRequest("/user-auth/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password, captchaToken }),
+    }),
+  logout: () =>
+    apiRequest("/user-auth/auth/logout", {
+      method: "POST",
     }),
   register: ({ email, name, password, phoneNumber }) =>
     apiRequest("/user-auth/users", {

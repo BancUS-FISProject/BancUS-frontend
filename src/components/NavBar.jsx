@@ -5,6 +5,12 @@ import "./Navbar.css";
 function Navbar({ isLoggedIn, onLogout }) {
   if (!isLoggedIn) return null;
 
+  const handleLogout = async () => {
+    if (onLogout) {
+      await onLogout();
+    }
+  };
+
   return (
     <header className="navbar">
       <div className="page-inner">
@@ -99,7 +105,7 @@ function Navbar({ isLoggedIn, onLogout }) {
           </nav>
         </div>
         <div className="navbar-actions navbar-actions--below">
-          <button type="button" className="logout-button" onClick={onLogout}>
+          <button type="button" className="logout-button" onClick={handleLogout}>
             Cerrar sesión
           </button>
         </div>

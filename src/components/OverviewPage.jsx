@@ -1,9 +1,10 @@
-// src/components/OverviewPage.jsx
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
 import { authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
+import { useNavigate } from "react-router-dom";
+import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
 
 const PLANS = [
   {
@@ -14,7 +15,9 @@ const PLANS = [
     features: [
       "Cuenta de pruebas",
       "1 tarjeta virtual",
-      "Límites reducidos de operación",
+      "Hasta 5 transacciones y un pago programado al mes",
+      "notificaciones sobre las transacciones en tiempo real",
+
     ],
     highlight: false,
   },
@@ -25,7 +28,7 @@ const PLANS = [
     description: "Pensado para el uso habitual de estudiantes.",
     features: [
       "Hasta 5 tarjetas virtuales",
-      "Notificaciones en tiempo real",
+      "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
       "Condiciones específicas para universitarios",
     ],
     highlight: true,
@@ -37,14 +40,17 @@ const PLANS = [
     description: "Ideal para proyectos de desarrollo e integración con APIs.",
     features: [
       "Tarjetas virtuales ilimitadas",
-      "Límites ampliados",
-      "Acceso avanzado a la API",
+      "transacciones ilimitadas",
+      "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
+      "Pagos programados ilimitados",
     ],
     highlight: false,
   },
 ];
 
+
 function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
+  const navigate = useNavigate();
   const siteKey = import.meta.env?.VITE_RECAPTCHA_SITE_KEY || "";
   const recaptchaRef = useRef(null);
   const [mode, setMode] = useState("login"); // login | register
@@ -93,9 +99,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   };
 
-  const handleLogout = () => {
-    onLogout && onLogout();
-    persistUserInfo(null);
+  const handleLogout = async () => {
+    try {
+      if (onLogout) {
+        await onLogout();
+      }
+    } finally {
+      persistUserInfo(null);
+    }
   };
 
   useEffect(() => {
@@ -397,10 +408,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                 <button
                   type="button"
                   className="btn-primary pricing-cta"
-                  onClick={() => {
-                    // aquí podrías, por ejemplo, preseleccionar un plan
-                    // antes de enviar al microservicio de alta
-                  }}
+                  onClick={() => navigate("/login-activity")}
                 >
                   Empezar con este plan
                 </button>
@@ -534,20 +542,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Pagos programados"
             subtitle="Cargos automáticos previstos."
           >
-            <div className="list-block">
-              <div className="list-row">
-                <span>Hipoteca · 01 de cada mes</span>
-                <span>€ 600</span>
-              </div>
-              <div className="list-row">
-                <span>Seguro coche · 15 de cada mes</span>
-                <span>€ 35</span>
-              </div>
-            </div>
-            <p className="muted">
-              Microservicio de pagos programados (
-              <code>/scheduled-payments</code>).
-            </p>
+            <OverviewPaymentsPage/>
           </ScrollSection>
 
           {/* Notificaciones */}
