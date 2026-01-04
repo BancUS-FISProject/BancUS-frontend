@@ -4,6 +4,7 @@ import { authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
+import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
 
 const PLANS = [
   {
@@ -536,20 +537,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Pagos programados"
             subtitle="Cargos automáticos previstos."
           >
-            <div className="list-block">
-              <div className="list-row">
-                <span>Hipoteca · 01 de cada mes</span>
-                <span>€ 600</span>
-              </div>
-              <div className="list-row">
-                <span>Seguro coche · 15 de cada mes</span>
-                <span>€ 35</span>
-              </div>
-            </div>
-            <p className="muted">
-              Microservicio de pagos programados (
-              <code>/scheduled-payments</code>).
-            </p>
+            <OverviewPaymentsPage/>
           </ScrollSection>
 
           {/* Notificaciones */}
