@@ -99,9 +99,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   };
 
-  const handleLogout = () => {
-    onLogout && onLogout();
-    persistUserInfo(null);
+  const handleLogout = async () => {
+    try {
+      if (onLogout) {
+        await onLogout();
+      }
+    } finally {
+      persistUserInfo(null);
+    }
   };
 
   useEffect(() => {
