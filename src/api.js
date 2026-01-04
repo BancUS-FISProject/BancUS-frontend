@@ -235,6 +235,7 @@ export const authApi = {
 export const healthApi = {
   accounts: () => apiRequest("/accounts/health"),
   userAuth: () => apiRequest("/user-auth/health"),
+  notifications: () => apiRequest("/notifications/health"),
   cache: () => apiRequest("/ping/cache"),
 };
 
