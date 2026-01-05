@@ -15,9 +15,9 @@ const PLANS = [
     features: [
       "Cuenta de pruebas",
       "1 tarjeta virtual",
-      "Hasta 5 transacciones y un pago programado al mes",
-      "notificaciones sobre las transacciones en tiempo real",
-
+      "Hasta 5 transacciones al mes",
+      "Notificaciones sobre las transacciones en tiempo real",
+      "Posibilidad de un pago programado configurado"
     ],
     highlight: false,
   },
@@ -30,6 +30,7 @@ const PLANS = [
       "Hasta 5 tarjetas virtuales",
       "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
       "Condiciones específicas para universitarios",
+      "Hasta 10 pagos programados posibles"
     ],
     highlight: true,
   },
@@ -40,9 +41,10 @@ const PLANS = [
     description: "Ideal para proyectos de desarrollo e integración con APIs.",
     features: [
       "Tarjetas virtuales ilimitadas",
-      "transacciones ilimitadas",
+      "Transacciones ilimitadas",
       "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
-      "Pagos programados ilimitados",
+      "Acceso avanzado a la API",
+      "Pagos programados ilimitados"
     ],
     highlight: false,
   },
