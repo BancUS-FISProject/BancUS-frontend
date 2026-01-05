@@ -210,6 +210,29 @@ export const transfersApi = {
     }),
 };
 
+// Endpoints de antifraude
+export const antifraudApi = {
+  checkTransaction: (data) =>
+    apiRequest("/antifraud/fraud-alerts/check", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getAlertsByIban: (iban) =>
+    apiRequest(`/antifraud/users/${encodeURIComponent(iban)}/fraud-alerts`),
+
+  updateAlert: (id, payload) =>
+    apiRequest(`/antifraud/fraud-alerts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteAlert: (id) =>
+    apiRequest(`/antifraud/fraud-alerts/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 // Endpoints de autenticación
 export const authApi = {
   login: (email, password, captchaToken) =>
