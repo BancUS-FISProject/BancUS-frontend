@@ -70,7 +70,7 @@ function NotificationSendHistoryPage() {
       <section className="history-actions">
         <button className="btn-secondary" onClick={() => navigate("/notifications")}>
           Cancelar
-        </button> {' '}
+        </button>
         <button className="btn-primary" onClick={handleConfirmSend}>
           Enviar historial
         </button>

@@ -35,7 +35,12 @@ function NotificationsPage() {
       }
 
       const data = await res.json();
-      setNotifications(data);
+      // solo notificaciones cuyo email se ha enviado
+      const visibleNotifications = data.filter(
+        (n) => n.email_sent !== false
+);
+
+setNotifications(visibleNotifications);
     } catch (err) {
       console.error(err);
       setError(err.message || "Error cargando notificaciones");
