@@ -1,0 +1,84 @@
+
+tr {
+  cursor: pointer;
+}
+.unread {
+  font-weight: bold;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+/* Botón base */
+.icon-btn {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background-color: #e5e7eb; /* gris claro */
+  color: #111827;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.icon-btn:hover {
+  background-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+/* Reenviar */
+.icon-btn.resend {
+  background-color: #dbeafe; /* azul claro */
+  color: #1e40af;
+}
+
+.icon-btn.resend:hover {
+  background-color: #bfdbfe;
+}
+
+/* Borrar */
+.icon-btn.danger {
+  background-color: #fee2e2; /* rojo claro */
+  color: #991b1b;
+}
+
+.icon-btn.danger:hover {
+  background-color: #fecaca;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  width: 320px;
+}
+
+.modal-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.history-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
