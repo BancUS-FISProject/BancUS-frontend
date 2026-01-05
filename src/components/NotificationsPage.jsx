@@ -12,7 +12,7 @@ function NotificationsPage() {
 
   const authUser = JSON.parse(localStorage.getItem("authUser"));
   const userId = authUser?.iban;
-  const isBusiness = authUser?.plan === "business";
+  const isPro = authUser?.plan === "pro";
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -73,7 +73,7 @@ setNotifications(visibleNotifications);
 
       if (res.status === 403) {
         alert(
-          "Esta funcionalidad solo está disponible para usuarios con plan Business."
+          "Esta funcionalidad solo está disponible para usuarios con plan Pro."
         );
         return;
       }
@@ -138,7 +138,7 @@ setNotifications(visibleNotifications);
         <button
           className="btn-secondary"
           onClick={() => navigate("/notifications/send-history")}
-          disabled={!isBusiness}
+          disabled={!isPro}
         >
           Enviar historial a mi email
         </button>
