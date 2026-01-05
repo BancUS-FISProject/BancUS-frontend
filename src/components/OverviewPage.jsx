@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { authApi } from "../api";
+import { accountsApi, authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -65,6 +65,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     password: "",
     phoneNumber: "",
     captchaToken: "",
+    subscription: "basico"
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -175,7 +176,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
           });
         }
       } else {
-        await authApi.register(registerForm);
+        await accountsApi.create(registerForm);
         const res = await authApi.login(
           registerForm.email,
           registerForm.password,
