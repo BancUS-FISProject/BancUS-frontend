@@ -34,7 +34,7 @@ export function setAuthToken(token) {
 }
 
 // Detectamos URL base para el microservicio de transferencias
-let TRANSFERS_API_BASE = "http://localhost:8001/v1";
+let TRANSFERS_API_BASE = "http://localhost:10000/v1";
 if (typeof import.meta !== "undefined" && import.meta.env) {
   if (import.meta.env.VITE_TRANSFERS_API_BASE_URL) {
     TRANSFERS_API_BASE = import.meta.env.VITE_TRANSFERS_API_BASE_URL;
