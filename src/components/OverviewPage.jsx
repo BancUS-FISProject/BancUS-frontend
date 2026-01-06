@@ -230,6 +230,13 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
   const displayPhone = userInfo?.phoneNumber || "Teléfono no registrado";
   const initials = getInitials(userInfo?.name || userInfo?.email || "BancUS");
 
+  const iban = userInfo?.iban || "No se ha podido obtener el iban"
+
+  const saldo = async (e) => {
+    return await accountsApi.getByIban(iban).balance
+  }
+
+
   return (
     <div className="overview-page">
       {/* LOGIN solo cuando no hay sesión */}
@@ -454,18 +461,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             <div className="two-cols">
               <div>
                 <p className="label">Saldo disponible</p>
-                <p className="big-number">€ 1.234,56</p>
+                <p className="big-number">{saldo}</p>
               </div>
               <div>
                 <p className="label">IBAN</p>
-                <p>ES12 3456 7890 1234 5678 9012</p>
+                <p>{iban}</p>
                 <p className="muted">Cuenta corriente · Uso diario</p>
               </div>
             </div>
-            <p className="muted">
-              Datos de ejemplo. Llamar al microservicio de cuentas (
-              <code>/accounts/summary</code>).
-            </p>
           </ScrollSection>
 
           {/* Transacciones */}
