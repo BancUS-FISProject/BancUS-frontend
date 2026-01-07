@@ -8,7 +8,7 @@ import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
 
 const PLANS = [
   {
-    id: "basic",
+    id: "basico",
     name: "Plan Básico",
     price: "0 € / mes",
     description: "Para probar la banca online sin compromiso.",
@@ -22,10 +22,10 @@ const PLANS = [
     highlight: false,
   },
   {
-    id: "student",
-    name: "Plan Estudiante",
+    id: "premium",
+    name: "Plan Premium",
     price: "4,99 € / mes",
-    description: "Pensado para el uso habitual de estudiantes.",
+    description: "Uso habitual con varias tarjetas y más límites.",
     features: [
       "Hasta 5 tarjetas virtuales",
       "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
@@ -138,10 +138,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
       if (msg.includes("duplicate value")) {
         return "Ya existe un usuario con esos datos (email o teléfono).";
       }
-      if (msg.includes("iban")) {
-        return "Hubo un problema generando el IBAN. Inténtalo de nuevo.";
-      }
-      return err?.message || "Error en la autenticación";
+      return err?.message || "Error creando o autenticando la cuenta";
     };
 
     try {
@@ -166,6 +163,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             email: profile.email,
             phoneNumber: profile.phoneNumber,
             iban: profile.iban,
+            plan: profile.plan,
           });
         } catch {
           const guessName =
@@ -175,10 +173,19 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             name: guessName,
             email: loginForm.email,
             phoneNumber: "No disponible",
+            plan: "basico",
           });
-        }
-      } else {
-        await accountsApi.create(registerForm);
+      }
+    } else {
+        const payload = {
+          name: registerForm.name,
+          email: registerForm.email,
+          password: registerForm.password,
+          phoneNumber: registerForm.phoneNumber,
+          subscription: registerForm.subscription,
+        };
+
+        await accountsApi.create(payload);
         const res = await authApi.login(
           registerForm.email,
           registerForm.password,
@@ -195,12 +202,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             email: profile.email,
             phoneNumber: profile.phoneNumber,
             iban: profile.iban,
+            plan: profile.plan,
           });
         } catch {
           persistUserInfo({
             name: registerForm.name,
             email: registerForm.email,
             phoneNumber: registerForm.phoneNumber,
+            plan: registerForm.subscription || "basico",
           });
         }
       }

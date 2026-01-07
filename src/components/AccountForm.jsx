@@ -3,7 +3,7 @@ import React, { useState } from "react";
 function AccountForm({ onSubmit, onCancel }) {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
-    const [subscription, setSubscription] = useState("Free");
+    const [subscription, setSubscription] = useState("basico");
 
     function handleSubmit(e) {
         e.preventDefault();
@@ -48,7 +48,7 @@ function AccountForm({ onSubmit, onCancel }) {
                     onChange={(e) => setSubscription(e.target.value)}
                 >
                     <option value="basico">basico</option>
-                    <option value="estudiante">estudiante</option>
+                    <option value="premium">premium</option>
                     <option value="pro">pro</option>
                 </select>
             </label>
