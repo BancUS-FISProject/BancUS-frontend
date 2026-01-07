@@ -1,4 +1,5 @@
 import React from "react";
+import "./NotificationsPage.css";
 
 const TYPE_LABELS = {
   "login": "Inicio de sesión",
@@ -27,6 +28,14 @@ function NotificationsTable({ notifications, onSelect, onDelete }) {
 
   return (
     <table className="cards-table">
+
+      <colgroup>
+        <col style={{ width: "20%" }} /> {/* TIPO */}
+        <col style={{ width: "35%" }} /> {/* TÍTULO */}
+        <col style={{ width: "15%" }} /> {/* FECHA */}
+        <col style={{ width: "15%" }} /> {/* ESTADO */}
+        <col style={{ width: "25%" }} /> {/* ACCIONES */}
+      </colgroup>
       <thead>
         <tr>
           <th>Tipo</th>
@@ -53,14 +62,14 @@ function NotificationsTable({ notifications, onSelect, onDelete }) {
             </td>
             <td className="actions-cell">
                 <button
-                className="icon-btn danger"
+                className="icon-btn"
                 title="Borrar notificación"
                 onClick={(e) => {
                     e.stopPropagation();
                     onDelete(n);
                 }}
                 >
-                🗑️ Borrar
+                🗑️
             </button>
             </td>
           </tr>

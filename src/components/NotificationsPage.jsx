@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NotificationsTable from "./NotificationsTable";
 import { NotificationDetail } from "./NotificationDetail";
+import { notificationsApi } from "../api";
+import "./NotificationsPage.css";
 
 function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -26,15 +28,9 @@ function NotificationsPage() {
     setError(null);
 
     try {
-      const res = await fetch(
-        `http://localhost:10000/v1/notifications/user/${userId}`
-      );
+      const data = await notificationsApi.getByUser(userId);
 
-      if (!res.ok) {
-        throw new Error("Error cargando notificaciones");
-      }
-
-      const data = await res.json();
+      //const data = await res.json();
       // solo notificaciones cuyo email se ha enviado
       const visibleNotifications = data.filter(
         (n) => n.email_sent !== false
@@ -50,57 +46,49 @@ setNotifications(visibleNotifications);
     }
   }
 
-  async function handleSendHistoryEmail() {
-    try {
-      const month = new Date().toISOString().slice(0, 7);
+  // async function handleSendHistoryEmail() {
+  //   try {
+  //     const month = new Date().toISOString().slice(0, 7);
 
-      const res = await fetch(
-        "http://localhost:10000/v1/notifications/events",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: userId,
-            type: "history-request",
-            metadata: {
-              month: month,
-            },
-          }),
-        }
-      );
+  //     const res = await fetch(
+  //       "http://localhost:10000/v1/notifications/events",
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({
+  //           userId: userId,
+  //           type: "history-request",
+  //           metadata: {
+  //             month: month,
+  //           },
+  //         }),
+  //       }
+  //     );
 
-      if (res.status === 403) {
-        alert(
-          "Esta funcionalidad solo está disponible para usuarios con plan Pro."
-        );
-        return;
-      }
+  //     if (res.status === 403) {
+  //       alert(
+  //         "Esta funcionalidad solo está disponible para usuarios con plan Pro."
+  //       );
+  //       return;
+  //     }
 
-      if (!res.ok) {
-        throw new Error("Error enviando el historial");
-      }
+  //     if (!res.ok) {
+  //       throw new Error("Error enviando el historial");
+  //     }
 
-      alert("Te hemos enviado el historial de este mes a tu email");
-    } catch (err) {
-      alert("No se pudo enviar el historial. Inténtalo más tarde.");
-    }
-  }
+  //     alert("Te hemos enviado el historial de este mes a tu email");
+  //   } catch (err) {
+  //     alert("No se pudo enviar el historial. Inténtalo más tarde.");
+  //   }
+  // }
 
   async function handleDeleteNotification(notification) {
     if (!window.confirm("¿Seguro que quieres borrar esta notificación?")) return;
 
     try {
-      const res = await fetch(
-        `http://localhost:10000/v1/notifications/${notification.id}`,
-        { method: "DELETE" }
-      );
-
-      if (!res.ok) {
-        throw new Error("Error al borrar la notificación");
-      }
-
+      const res = await notificationsApi.deleteById(notification.id);
       // Quitarla del estado local
       setNotifications((prev) =>
         prev.filter((n) => n.id !== notification.id)
@@ -136,7 +124,7 @@ setNotifications(visibleNotifications);
 
       <section className="cards-actions">
         <button
-          className="btn-secondary"
+          className="btn-primary"
           onClick={() => navigate("/notifications/send-history")}
           disabled={!isPro}
         >
