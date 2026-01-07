@@ -19,6 +19,7 @@ import PricingPage from "./pages/PricingPage";
 import StatementsPage from "./pages/StatementsPage";
 import "./App.css";
 import { authApi, getStoredToken, setAuthToken } from "./api";
+import NotificationSendHistoryPage from "./components/NotificationSendHistoryPage";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getStoredToken()));
@@ -108,6 +109,10 @@ function App() {
 
               {/* Página de pricing aparte (además del bloque en OverviewPage) */}
               <Route path="/pricing" element={<PricingPage />} />
+              <Route
+                path="/notifications/send-history"
+                element={<NotificationSendHistoryPage />}
+              />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { authApi } from "../api";
+import { accountsApi, authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -8,28 +8,29 @@ import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
 
 const PLANS = [
   {
-    id: "basic",
+    id: "basico",
     name: "Plan Básico",
     price: "0 € / mes",
     description: "Para probar la banca online sin compromiso.",
     features: [
       "Cuenta de pruebas",
       "1 tarjeta virtual",
-      "Hasta 5 transacciones y un pago programado al mes",
-      "notificaciones sobre las transacciones en tiempo real",
-
+      "Hasta 5 transacciones al mes",
+      "Notificaciones sobre las transacciones en tiempo real",
+      "Posibilidad de un pago programado configurado"
     ],
     highlight: false,
   },
   {
-    id: "student",
-    name: "Plan Estudiante",
+    id: "premium",
+    name: "Plan Premium",
     price: "4,99 € / mes",
-    description: "Pensado para el uso habitual de estudiantes.",
+    description: "Uso habitual con varias tarjetas y más límites.",
     features: [
       "Hasta 5 tarjetas virtuales",
       "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
       "Condiciones específicas para universitarios",
+      "Hasta 10 pagos programados posibles"
     ],
     highlight: true,
   },
@@ -40,9 +41,10 @@ const PLANS = [
     description: "Ideal para proyectos de desarrollo e integración con APIs.",
     features: [
       "Tarjetas virtuales ilimitadas",
-      "transacciones ilimitadas",
+      "Transacciones ilimitadas",
       "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
-      "Pagos programados ilimitados",
+      "Acceso avanzado a la API",
+      "Pagos programados ilimitados"
     ],
     highlight: false,
   },
@@ -65,6 +67,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     password: "",
     phoneNumber: "",
     captchaToken: "",
+    subscription: "basico"
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -135,10 +138,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
       if (msg.includes("duplicate value")) {
         return "Ya existe un usuario con esos datos (email o teléfono).";
       }
-      if (msg.includes("iban")) {
-        return "Hubo un problema generando el IBAN. Inténtalo de nuevo.";
-      }
-      return err?.message || "Error en la autenticación";
+      return err?.message || "Error creando o autenticando la cuenta";
     };
 
     try {
@@ -163,6 +163,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             email: profile.email,
             phoneNumber: profile.phoneNumber,
             iban: profile.iban,
+            plan: profile.plan,
           });
         } catch {
           const guessName =
@@ -172,10 +173,19 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             name: guessName,
             email: loginForm.email,
             phoneNumber: "No disponible",
+            plan: "basico",
           });
-        }
-      } else {
-        await authApi.register(registerForm);
+      }
+    } else {
+        const payload = {
+          name: registerForm.name,
+          email: registerForm.email,
+          password: registerForm.password,
+          phoneNumber: registerForm.phoneNumber,
+          subscription: registerForm.subscription,
+        };
+
+        await accountsApi.create(payload);
         const res = await authApi.login(
           registerForm.email,
           registerForm.password,
@@ -192,12 +202,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             email: profile.email,
             phoneNumber: profile.phoneNumber,
             iban: profile.iban,
+            plan: profile.plan,
           });
         } catch {
           persistUserInfo({
             name: registerForm.name,
             email: registerForm.email,
             phoneNumber: registerForm.phoneNumber,
+            plan: registerForm.subscription || "basico",
           });
         }
       }
@@ -226,6 +238,27 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
   const displayEmail = userInfo?.email || "Correo no disponible";
   const displayPhone = userInfo?.phoneNumber || "Teléfono no registrado";
   const initials = getInitials(userInfo?.name || userInfo?.email || "BancUS");
+
+  const iban = userInfo?.iban || "No se ha podido obtener el iban"
+
+  const [saldo, setSaldo] = useState("Cargando..."); 
+
+  useEffect(() => {
+    const fetchSaldo = async () => {
+      if (isLoggedIn && iban && iban !== "No disponible") {
+        try {
+          const data = await accountsApi.getByIban(iban);
+          setSaldo(data.balance + " $"); 
+        } catch (error) {
+          console.error("Error obteniendo saldo:", error);
+          setSaldo("Error");
+        }
+      }
+    };
+
+    fetchSaldo();
+  }, [isLoggedIn, iban]);
+
 
   return (
     <div className="overview-page">
@@ -451,18 +484,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             <div className="two-cols">
               <div>
                 <p className="label">Saldo disponible</p>
-                <p className="big-number">€ 1.234,56</p>
+                <p className="big-number">{saldo}</p>
               </div>
               <div>
                 <p className="label">IBAN</p>
-                <p>ES12 3456 7890 1234 5678 9012</p>
+                <p>{iban}</p>
                 <p className="muted">Cuenta corriente · Uso diario</p>
               </div>
             </div>
-            <p className="muted">
-              Datos de ejemplo. Llamar al microservicio de cuentas (
-              <code>/accounts/summary</code>).
-            </p>
           </ScrollSection>
 
           {/* Transacciones */}

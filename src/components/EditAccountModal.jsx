@@ -3,12 +3,12 @@ import React, { useEffect, useState } from "react";
 function EditAccountModal({ account, onClose, onSave }) {
     const [name, setName] = useState(account.name || "");
     const [email, setEmail] = useState(account.email || "");
-    const [subscription, setSubscription] = useState(account.subscription || "Free");
+    const [subscription, setSubscription] = useState(account.subscription || "basico");
 
     useEffect(() => {
         setName(account.name || "");
         setEmail(account.email || "");
-        setSubscription(account.subscription || "Free");
+        setSubscription(account.subscription || "basico");
     }, [account]);
 
     function handleSubmit(e) {
@@ -62,10 +62,9 @@ function EditAccountModal({ account, onClose, onSave }) {
                             value={subscription}
                             onChange={(e) => setSubscription(e.target.value)}
                         >
-                            <option value="Free">Free</option>
-                            <option value="Basic">Basic</option>
-                            <option value="Premium">Premium</option>
-                            <option value="Enterprise">Enterprise</option>
+                            <option value="basico">basico</option>
+                            <option value="premium">premium</option>
+                            <option value="pro">pro</option>
                         </select>
                     </label>
 
