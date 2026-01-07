@@ -2,11 +2,24 @@ import React, { useEffect, useState } from "react";
 import "./StatementsPage.css";
 
 // NOTE: replaced mock data with real accountNumber and API call for months
-const API_BASE = "http://localhost:3000";
+const API_BASE = "http://localhost:10000/v1";
+
 
 function StatementsPage() {
     // cuenta de prueba (usar como id en el endpoint)
-    const accountNumber = 1500;
+
+    const [userInfo, setUserInfo] = useState(() => {
+        if (typeof localStorage === "undefined") return null;
+        try {
+            const stored = localStorage.getItem("authUser");
+            return stored ? JSON.parse(stored) : null;
+        } catch {
+            return null;
+        }
+    });
+
+    const iban = userInfo?.iban || "No se ha podido obtener el iban"
+    const accountNumber = iban;
     const [accounts, setAccounts] = useState([]);
 
     const [selectedAccount, setSelectedAccount] = useState(null);
@@ -23,7 +36,7 @@ function StatementsPage() {
     const listAccounts = async () => {
         try {
             // usar la variable `accountNumber` como la única cuenta disponible
-            const acc = { id: String(accountNumber), name: `Cuenta ${accountNumber}` };
+            const acc = { id: String(accountNumber), name: accountNumber };
             setAccounts([acc]);
             setSelectedAccount(acc);
             setListStatus(`1 cuenta disponible: ${acc.name}`);
@@ -52,8 +65,7 @@ function StatementsPage() {
         const load = async () => {
             try {
                 setListStatus("Cargando meses...");
-                // use relative path (Vite dev proxy configured) to avoid CORS in development
-                const res = await fetch(`/v1/bankstatemens/by-account/${accountNumber}`);
+                const res = await fetch(`${API_BASE}/bankstatements/by-account/${accountNumber}`);
                 if (!res.ok) throw new Error(`status ${res.status}`);
                 const json = await res.json();
                 const m = Array.isArray(json.months) ? json.months : [];
@@ -69,6 +81,7 @@ function StatementsPage() {
                     }
                     setListStatus("");
                 }
+                console.log(res);
             } catch (e) {
                 console.error('StatementsPage.load months error', e);
                 if (mounted) setListStatus('Error cargando meses');
@@ -90,7 +103,7 @@ function StatementsPage() {
         const loadDetail = async () => {
             try {
                 setDetailStatus('Cargando detalle...');
-                const res = await fetch(`/v1/bankstatemens/${selectedMonthId}`);
+                const res = await fetch(`${API_BASE}/bankstatements/${selectedMonthId}`);
                 if (!res.ok) throw new Error(`status ${res.status}`);
                 const json = await res.json();
                 if (mounted) {

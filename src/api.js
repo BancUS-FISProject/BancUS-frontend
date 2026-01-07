@@ -263,6 +263,7 @@ export const healthApi = {
   accounts: () => apiRequest("/accounts/health"),
   userAuth: () => apiRequest("/user-auth/health"),
   notifications: () => apiRequest("/notifications/health"),
+  statements: () => apiRequest("/statements/health"),
   cache: () => apiRequest("/ping/cache"),
 };
 
