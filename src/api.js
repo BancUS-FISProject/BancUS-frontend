@@ -258,6 +258,26 @@ export const authApi = {
     }),
 };
 
+// Endpoints específicos para notificaciones
+export const notificationsApi = {
+  // Obtener notificaciones del usuario
+  getByUser: (iban) =>
+    apiRequest(`/notifications/user/${encodeURIComponent(iban)}`),
+
+  // Enviar evento (historial, login, pago, etc.)
+  sendEvent: (payload) =>
+    apiRequest("/notifications/events", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  // Borrar una notificación
+  deleteById: (id) =>
+    apiRequest(`/notifications/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 // Endpoints de salud por microservicio
 export const healthApi = {
   accounts: () => apiRequest("/accounts/health"),
