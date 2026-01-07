@@ -75,7 +75,12 @@ function NotificationSendHistoryPage() {
 
         </section>
 
+
+
       </div>
+              <button className="btn-secondary" onClick={() => navigate("/notifications")}>
+          Cancelar
+        </button>
 
     </div>
   );

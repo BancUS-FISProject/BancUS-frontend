@@ -5,6 +5,7 @@ import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
 import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
+import { notificationsApi } from "../api";
 
 const PLANS = [
   {
@@ -282,6 +283,44 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     fetchSaldo();
   }, [isLoggedIn, iban]);
 
+
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [errorNotifications, setErrorNotifications] = useState(null);
+
+  const userId = userInfo?.iban;
+
+  useEffect(() => {
+    if (userId) {
+      loadNotifications();
+    }
+  }, [userId]);
+
+  async function loadNotifications() {
+    setLoadingNotifications(true);
+    setErrorNotifications(null);
+
+    try {
+      const data = await notificationsApi.getByUser(userId);
+
+      const visibleNotifications = (Array.isArray(data) ? data : [])
+        .filter(n => n.email_sent !== false)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        )
+        .slice(0, 3);
+
+      setNotifications(visibleNotifications);
+    } catch (err) {
+      console.error(err);
+      setErrorNotifications(err.message || "Error cargando notificaciones");
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }
 
   return (
     <div className="overview-page">
@@ -614,15 +653,39 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Notificaciones"
             subtitle="Avisos importantes sobre tu cuenta."
           >
-            <ul className="notifications-list">
-              <li>Nueva tarjeta emitida el 26/11/2025.</li>
-              <li>Actualización de condiciones de la cuenta.</li>
-              <li>Compra online inusual revisada y aceptada.</li>
-            </ul>
-            <p className="muted">
-              Aquí iría el microservicio de notificaciones (
-              <code>/notifications</code>).
-            </p>
+            {loadingNotifications ? (
+              <p>Cargando notificaciones...</p>
+            ) : notifications.length === 0 ? (
+              <p className="muted">No tienes notificaciones recientes.</p>
+            ) : (
+              <div className="list-block">
+                {/* Cabecera */}
+                <div className="list-row list-row-header">
+                  <span className="label">Concepto</span>
+                  <span className="label">Fecha</span>
+                </div>
+
+                {/* Filas */}
+                {notifications.map((n) => (
+                  <div className="list-row" key={n.id}>
+                    <span>{n.title || n.type}</span>
+                    <span className="muted small">
+                      {new Date(n.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="link-button"
+                onClick={() => navigate("/notifications")}
+                style={{ fontSize: "0.9rem" }}
+              >
+                Ver todas las notificaciones →
+              </button>
+            </div>
           </ScrollSection>
         </>
       )}
