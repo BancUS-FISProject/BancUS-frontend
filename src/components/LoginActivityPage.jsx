@@ -16,7 +16,7 @@ function LoginActivityPage() {
     name: "",
     email: "",
     phoneNumber: "",
-    plan: "basic",
+    plan: "basico",
     password: "",
   });
 
@@ -59,7 +59,7 @@ function LoginActivityPage() {
           name: data.name || "",
           email: data.email || "",
           phoneNumber: data.phoneNumber || "",
-          plan: data.plan || "basic",
+          plan: data.plan || "basico",
           password: "",
         });
       } catch (err) {
@@ -137,7 +137,7 @@ function LoginActivityPage() {
         name: refreshed.name || "",
         email: refreshed.email || "",
         phoneNumber: refreshed.phoneNumber || "",
-        plan: refreshed.plan || "basic",
+        plan: refreshed.plan || "basico",
         password: "",
       }));
       setSuccess("Datos actualizados correctamente.");
@@ -186,7 +186,7 @@ function LoginActivityPage() {
             </div>
             <div className="profile-tile">
               <p className="label">Plan</p>
-              <p>{displayUser.plan || "basic"}</p>
+              <p>{displayUser.plan || "basico"}</p>
             </div>
           </div>
 
@@ -243,10 +243,10 @@ function LoginActivityPage() {
                     value={form.plan}
                     onChange={handleChange}
                     required
-                  >
-                    <option value="basic">basic</option>
+                >
+                    <option value="basico">basico</option>
                     <option value="premium">premium</option>
-                    <option value="business">business</option>
+                    <option value="pro">pro</option>
                   </select>
                 </label>
                 <label>

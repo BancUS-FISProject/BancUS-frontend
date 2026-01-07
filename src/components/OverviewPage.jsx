@@ -1,31 +1,36 @@
-// src/components/OverviewPage.jsx
-import React, { useState } from "react";
-import { authApi } from "../api";
+import React, { useEffect, useRef, useState } from "react";
+import ReCAPTCHA from "react-google-recaptcha";
+import { accountsApi, authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
+import { useNavigate } from "react-router-dom";
+import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
 
 const PLANS = [
   {
-    id: "basic",
+    id: "basico",
     name: "Plan Básico",
     price: "0 € / mes",
     description: "Para probar la banca online sin compromiso.",
     features: [
       "Cuenta de pruebas",
       "1 tarjeta virtual",
-      "Límites reducidos de operación",
+      "Hasta 5 transacciones al mes",
+      "Notificaciones sobre las transacciones en tiempo real",
+      "Posibilidad de un pago programado configurado"
     ],
     highlight: false,
   },
   {
-    id: "student",
-    name: "Plan Estudiante",
+    id: "premium",
+    name: "Plan Premium",
     price: "4,99 € / mes",
-    description: "Pensado para el uso habitual de estudiantes.",
+    description: "Uso habitual con varias tarjetas y más límites.",
     features: [
       "Hasta 5 tarjetas virtuales",
-      "Notificaciones en tiempo real",
+      "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
       "Condiciones específicas para universitarios",
+      "Hasta 10 pagos programados posibles"
     ],
     highlight: true,
   },
@@ -36,21 +41,33 @@ const PLANS = [
     description: "Ideal para proyectos de desarrollo e integración con APIs.",
     features: [
       "Tarjetas virtuales ilimitadas",
-      "Límites ampliados",
+      "Transacciones ilimitadas",
+      "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
       "Acceso avanzado a la API",
+      "Pagos programados ilimitados"
     ],
     highlight: false,
   },
 ];
 
+
 function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
+  const navigate = useNavigate();
+  const siteKey = import.meta.env?.VITE_RECAPTCHA_SITE_KEY || "";
+  const recaptchaRef = useRef(null);
   const [mode, setMode] = useState("login"); // login | register
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginForm, setLoginForm] = useState({
+    email: "",
+    password: "",
+    captchaToken: "",
+  });
   const [registerForm, setRegisterForm] = useState({
     name: "",
     email: "",
     password: "",
     phoneNumber: "",
+    captchaToken: "",
+    subscription: "basico"
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -85,9 +102,29 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   };
 
-  const handleLogout = () => {
-    onLogout && onLogout();
-    persistUserInfo(null);
+  const handleLogout = async () => {
+    try {
+      if (onLogout) {
+        await onLogout();
+      }
+    } finally {
+      persistUserInfo(null);
+    }
+  };
+
+  useEffect(() => {
+    // Reset captcha al cambiar de modo
+    recaptchaRef.current?.reset();
+    setLoginForm((prev) => ({ ...prev, captchaToken: "" }));
+    setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
+  }, [mode]);
+
+  const handleCaptchaChange = (token) => {
+    if (mode === "login") {
+      setLoginForm((prev) => ({ ...prev, captchaToken: token || "" }));
+    } else {
+      setRegisterForm((prev) => ({ ...prev, captchaToken: token || "" }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -101,15 +138,23 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
       if (msg.includes("duplicate value")) {
         return "Ya existe un usuario con esos datos (email o teléfono).";
       }
-      if (msg.includes("iban")) {
-        return "Hubo un problema generando el IBAN. Inténtalo de nuevo.";
-      }
-      return err?.message || "Error en la autenticación";
+      return err?.message || "Error creando o autenticando la cuenta";
     };
 
     try {
+      const captchaToken =
+        mode === "login" ? loginForm.captchaToken : registerForm.captchaToken;
+      if (siteKey && !captchaToken) {
+        setFormError("Completa el captcha para continuar.");
+        return;
+      }
+
       if (mode === "login") {
-        const res = await authApi.login(loginForm.email, loginForm.password);
+        const res = await authApi.login(
+          loginForm.email,
+          loginForm.password,
+          loginForm.captchaToken
+        );
         onLogin && onLogin(res.access_token);
         try {
           const profile = await authApi.getUserByIdentifier(loginForm.email);
@@ -118,6 +163,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             email: profile.email,
             phoneNumber: profile.phoneNumber,
             iban: profile.iban,
+            plan: profile.plan,
           });
         } catch {
           const guessName =
@@ -127,13 +173,23 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             name: guessName,
             email: loginForm.email,
             phoneNumber: "No disponible",
+            plan: "basico",
           });
-        }
-      } else {
-        await authApi.register(registerForm);
+      }
+    } else {
+        const payload = {
+          name: registerForm.name,
+          email: registerForm.email,
+          password: registerForm.password,
+          phoneNumber: registerForm.phoneNumber,
+          subscription: registerForm.subscription,
+        };
+
+        await accountsApi.create(payload);
         const res = await authApi.login(
           registerForm.email,
-          registerForm.password
+          registerForm.password,
+          registerForm.captchaToken
         );
         onLogin && onLogin(res.access_token);
         setFormSuccess("Cuenta creada y sesión iniciada.");
@@ -146,19 +202,24 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             email: profile.email,
             phoneNumber: profile.phoneNumber,
             iban: profile.iban,
+            plan: profile.plan,
           });
         } catch {
           persistUserInfo({
             name: registerForm.name,
             email: registerForm.email,
             phoneNumber: registerForm.phoneNumber,
+            plan: registerForm.subscription || "basico",
           });
         }
       }
     } catch (err) {
-      setFormError(formatError(err));
+        setFormError(formatError(err));
     } finally {
       setFormLoading(false);
+      recaptchaRef.current?.reset();
+      setLoginForm((prev) => ({ ...prev, captchaToken: "" }));
+      setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
     }
   };
 
@@ -177,6 +238,27 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
   const displayEmail = userInfo?.email || "Correo no disponible";
   const displayPhone = userInfo?.phoneNumber || "Teléfono no registrado";
   const initials = getInitials(userInfo?.name || userInfo?.email || "BancUS");
+
+  const iban = userInfo?.iban || "No se ha podido obtener el iban"
+
+  const [saldo, setSaldo] = useState("Cargando..."); 
+
+  useEffect(() => {
+    const fetchSaldo = async () => {
+      if (isLoggedIn && iban && iban !== "No disponible") {
+        try {
+          const data = await accountsApi.getByIban(iban);
+          setSaldo(data.balance + " $"); 
+        } catch (error) {
+          console.error("Error obteniendo saldo:", error);
+          setSaldo("Error");
+        }
+      }
+    };
+
+    fetchSaldo();
+  }, [isLoggedIn, iban]);
+
 
   return (
     <div className="overview-page">
@@ -278,6 +360,20 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                 </div>
               )}
 
+              <div className="form-row">
+                {siteKey ? (
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={siteKey}
+                    onChange={handleCaptchaChange}
+                  />
+                ) : (
+                  <p className="info-message">
+                    Configura VITE_RECAPTCHA_SITE_KEY para habilitar el captcha.
+                  </p>
+                )}
+              </div>
+
               <div className="form-row form-row-inline">
                 <label className="checkbox">
                   <input type="checkbox" />
@@ -345,10 +441,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                 <button
                   type="button"
                   className="btn-primary pricing-cta"
-                  onClick={() => {
-                    // aquí podrías, por ejemplo, preseleccionar un plan
-                    // antes de enviar al microservicio de alta
-                  }}
+                  onClick={() => navigate("/login-activity")}
                 >
                   Empezar con este plan
                 </button>
@@ -391,18 +484,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             <div className="two-cols">
               <div>
                 <p className="label">Saldo disponible</p>
-                <p className="big-number">€ 1.234,56</p>
+                <p className="big-number">{saldo}</p>
               </div>
               <div>
                 <p className="label">IBAN</p>
-                <p>ES12 3456 7890 1234 5678 9012</p>
+                <p>{iban}</p>
                 <p className="muted">Cuenta corriente · Uso diario</p>
               </div>
             </div>
-            <p className="muted">
-              Datos de ejemplo. Llamar al microservicio de cuentas (
-              <code>/accounts/summary</code>).
-            </p>
           </ScrollSection>
 
           {/* Transacciones */}
@@ -482,20 +571,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Pagos programados"
             subtitle="Cargos automáticos previstos."
           >
-            <div className="list-block">
-              <div className="list-row">
-                <span>Hipoteca · 01 de cada mes</span>
-                <span>€ 600</span>
-              </div>
-              <div className="list-row">
-                <span>Seguro coche · 15 de cada mes</span>
-                <span>€ 35</span>
-              </div>
-            </div>
-            <p className="muted">
-              Microservicio de pagos programados (
-              <code>/scheduled-payments</code>).
-            </p>
+            <OverviewPaymentsPage/>
           </ScrollSection>
 
           {/* Notificaciones */}

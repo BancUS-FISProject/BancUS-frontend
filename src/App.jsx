@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from "react";
 import {
   BrowserRouter as Router,
@@ -6,20 +5,21 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import HealthBar from "./components/HealthBar";
+// import HealthBar from "./components/HealthBar";
 import Navbar from "./components/NavBar";
 import OverviewPage from "./components/OverviewPage";
 import AccountsPage from "./components/AccountsPage";
 import TransactionsPage from "./components/TransactionsPage";
 import FraudPage from "./components/FraudPage";
 import LoginActivityPage from "./components/LoginActivityPage";
-import PaymentsPage from "./components/PaymentsPage";
+import PaymentsPage from "./components/PaymentsPage/PaymentsPage";
 import NotificationsPage from "./components/NotificationsPage";
 import CardsPage from "./components/CardsPage";
 import PricingPage from "./pages/PricingPage";
 import StatementsPage from "./pages/StatementsPage";
 import "./App.css";
-import { getStoredToken, setAuthToken } from "./api";
+import { authApi, getStoredToken, setAuthToken } from "./api";
+import NotificationSendHistoryPage from "./components/NotificationSendHistoryPage";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(Boolean(getStoredToken()));
@@ -31,9 +31,21 @@ function App() {
     setIsLoggedIn(true);
   };
 
-  const handleLogout = () => {
-    setAuthToken(null);
-    setIsLoggedIn(false);
+  const handleLogout = async () => {
+    try {
+      const token = getStoredToken();
+      if (token) {
+        await authApi.logout();
+      }
+    } catch (error) {
+      console.error("Error al cerrar sesión en backend", error);
+    } finally {
+      setAuthToken(null);
+      setIsLoggedIn(false);
+      if (typeof localStorage !== "undefined") {
+        localStorage.removeItem("authUser");
+      }
+    }
   };
 
   const ProtectedRoute = ({ element }) =>
@@ -42,7 +54,7 @@ function App() {
   return (
     <Router>
       <div className="app">
-        <HealthBar />
+        {/* <HealthBar /> */}
 
         {/* Navbar solo si hay login */}
         <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
@@ -97,6 +109,10 @@ function App() {
 
               {/* Página de pricing aparte (además del bloque en OverviewPage) */}
               <Route path="/pricing" element={<PricingPage />} />
+              <Route
+                path="/notifications/send-history"
+                element={<NotificationSendHistoryPage />}
+              />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

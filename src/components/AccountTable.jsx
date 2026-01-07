@@ -20,7 +20,7 @@ function AccountTable({ accounts, onToggleBlock, onDelete, onEdit, onManageCards
     function formatBalance(balance) {
         return new Intl.NumberFormat("es-ES", {
             style: "currency",
-            currency: "EUR",
+            currency: "USD",
         }).format(balance || 0);
     }
 
@@ -46,8 +46,8 @@ function AccountTable({ accounts, onToggleBlock, onDelete, onEdit, onManageCards
                         <td>{account.name}</td>
                         <td>{account.email}</td>
                         <td>
-                            <span className={`badge badge-${account.subscription?.toLowerCase() || 'free'}`}>
-                                {account.subscription || "Free"}
+                            <span className={`badge badge-${account.subscription?.toLowerCase() || 'basico'}`}>
+                                {account.subscription || "basico"}
                             </span>
                         </td>
                         <td className={account.balance < 0 ? "balance-negative" : "balance-positive"}>

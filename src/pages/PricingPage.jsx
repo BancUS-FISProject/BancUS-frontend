@@ -1,42 +1,47 @@
 import { Link } from "react-router-dom";
 
 function PricingPage() {
-  const plans = [
+  const PLANS = [
     {
-      id: "basic",
+      id: "basico",
       name: "Plan Básico",
       price: "0 € / mes",
-      description: "Para empezar a probar BancUS sin compromiso.",
+      description: "Para probar la banca online sin compromiso.",
       features: [
-        "Cuenta básica de pruebas",
+        "Cuenta de pruebas",
         "1 tarjeta virtual",
-        "Límites reducidos de operación",
+        "Hasta 5 transacciones al mes",
+        "Notificaciones sobre las transacciones en tiempo real",
+        "Posibilidad de un pago programado configurado"
       ],
-      recommended: false,
+      highlight: false,
     },
     {
-      id: "student",
-      name: "Plan Estudiante",
+      id: "premium",
+      name: "Plan Premium",
       price: "4,99 € / mes",
-      description: "Pensado para uso habitual en el día a día.",
+      description: "Uso habitual con varias tarjetas y más límites.",
       features: [
         "Hasta 5 tarjetas virtuales",
-        "Notificaciones instantáneas",
-        "Soporte prioritario dentro del campus",
+        "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
+        "Condiciones específicas para universitarios",
+        "Hasta 10 pagos programados posibles"
       ],
-      recommended: true,
+      highlight: true,
     },
     {
       id: "pro",
       name: "Plan Pro",
       price: "9,99 € / mes",
-      description: "Ideal para proyectos de investigación y desarrollo.",
+      description: "Ideal para proyectos de desarrollo e integración con APIs.",
       features: [
-        "Tarjetas ilimitadas",
-        "Límites de operación ampliados",
-        "Acceso a API ampliada para integraciones",
+        "Tarjetas virtuales ilimitadas",
+        "Transacciones ilimitadas",
+        "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
+        "Acceso avanzado a la API",
+        "Pagos programados ilimitados"
       ],
-      recommended: false,
+      highlight: false,
     },
   ];
 
@@ -50,15 +55,16 @@ function PricingPage() {
       </header>
 
       <section className="pricing-grid">
-        {plans.map((plan) => (
+        {PLANS.map((plan) => (
           <article
             key={plan.id}
-            className={`pricing-card ${
-              plan.recommended ? "pricing-card--highlight" : ""
-            }`}
+            className={
+              "pricing-card" +
+              (plan.highlight ? " pricing-card--highlight" : "")
+            }
           >
-            {plan.recommended && (
-              <span className="badge">Recomendado</span>
+            {plan.highlight && (
+              <span className="pricing-badge">Más popular</span>
             )}
 
             <h2>{plan.name}</h2>
@@ -66,12 +72,12 @@ function PricingPage() {
             <p className="pricing-description">{plan.description}</p>
 
             <ul className="pricing-features">
-              {plan.features.map((f) => (
-                <li key={f}>{f}</li>
+              {plan.features.map((feature) => (
+                <li key={feature}>{feature}</li>
               ))}
             </ul>
 
-            <Link to="/login" className="btn btn-primary">
+            <Link to="/#login" className="btn-primary pricing-cta">
               Empezar con este plan
             </Link>
           </article>
