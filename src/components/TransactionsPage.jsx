@@ -71,7 +71,7 @@ function TransactionsPage() {
       setTransfers(all);
     } catch (err) {
       console.error(err);
-      setError("Error cargando transferencias. Verifica que el microservicio esté en el puerto 8001.");
+      setError("Error cargando transferencias. Por favor, inténtalo más tarde.");
     } finally {
       setLoading(false);
     }
