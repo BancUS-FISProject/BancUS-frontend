@@ -57,7 +57,7 @@ function NotificationsTable({ notifications, onSelect, onDelete }) {
                   n.read ? "badge badge-active" : "badge badge-frozen"
                 }
               >
-                {n.read ? "Leída" : "Nueva"}
+                {n.read ? "Vista" : "No vista"}
               </span>
             </td>
             <td className="actions-cell">
