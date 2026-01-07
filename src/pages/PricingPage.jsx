@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 function PricingPage() {
   const PLANS = [
     {
-      id: "basic",
+      id: "basico",
       name: "Plan Básico",
       price: "0 € / mes",
       description: "Para probar la banca online sin compromiso.",
@@ -17,10 +17,10 @@ function PricingPage() {
       highlight: false,
     },
     {
-      id: "student",
-      name: "Plan Estudiante",
+      id: "premium",
+      name: "Plan Premium",
       price: "4,99 € / mes",
-      description: "Pensado para el uso habitual de estudiantes.",
+      description: "Uso habitual con varias tarjetas y más límites.",
       features: [
         "Hasta 5 tarjetas virtuales",
         "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
