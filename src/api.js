@@ -34,7 +34,7 @@ export function setAuthToken(token) {
 }
 
 // Detectamos URL base para el microservicio de transferencias
-let TRANSFERS_API_BASE = "http://localhost:8001/v1";
+let TRANSFERS_API_BASE = "http://localhost:10000/v1";
 if (typeof import.meta !== "undefined" && import.meta.env) {
   if (import.meta.env.VITE_TRANSFERS_API_BASE_URL) {
     TRANSFERS_API_BASE = import.meta.env.VITE_TRANSFERS_API_BASE_URL;
@@ -210,6 +210,29 @@ export const transfersApi = {
     }),
 };
 
+// Endpoints de antifraude
+export const antifraudApi = {
+  checkTransaction: (data) =>
+    apiRequest("/antifraud/fraud-alerts/check", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getAlertsByIban: (iban) =>
+    apiRequest(`/antifraud/users/${encodeURIComponent(iban)}/fraud-alerts`),
+
+  updateAlert: (id, payload) =>
+    apiRequest(`/antifraud/fraud-alerts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+
+  deleteAlert: (id) =>
+    apiRequest(`/antifraud/fraud-alerts/${id}`, {
+      method: "DELETE",
+    }),
+};
+
 // Endpoints de autenticación
 export const authApi = {
   login: (email, password, captchaToken) =>
@@ -239,6 +262,7 @@ export const authApi = {
 export const healthApi = {
   accounts: () => apiRequest("/accounts/health"),
   userAuth: () => apiRequest("/user-auth/health"),
+  notifications: () => apiRequest("/notifications/health"),
   cache: () => apiRequest("/ping/cache"),
 };
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { authApi } from "../api";
+import { accountsApi, authApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -15,9 +15,9 @@ const PLANS = [
     features: [
       "Cuenta de pruebas",
       "1 tarjeta virtual",
-      "Hasta 5 transacciones y un pago programado al mes",
-      "notificaciones sobre las transacciones en tiempo real",
-
+      "Hasta 5 transacciones al mes",
+      "Notificaciones sobre las transacciones en tiempo real",
+      "Posibilidad de un pago programado configurado"
     ],
     highlight: false,
   },
@@ -30,6 +30,7 @@ const PLANS = [
       "Hasta 5 tarjetas virtuales",
       "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
       "Condiciones específicas para universitarios",
+      "Hasta 10 pagos programados posibles"
     ],
     highlight: true,
   },
@@ -40,9 +41,10 @@ const PLANS = [
     description: "Ideal para proyectos de desarrollo e integración con APIs.",
     features: [
       "Tarjetas virtuales ilimitadas",
-      "transacciones ilimitadas",
+      "Transacciones ilimitadas",
       "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
-      "Pagos programados ilimitados",
+      "Acceso avanzado a la API",
+      "Pagos programados ilimitados"
     ],
     highlight: false,
   },
@@ -65,6 +67,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     password: "",
     phoneNumber: "",
     captchaToken: "",
+    subscription: "basico"
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -175,7 +178,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
           });
         }
       } else {
-        await authApi.register(registerForm);
+        await accountsApi.create(registerForm);
         const res = await authApi.login(
           registerForm.email,
           registerForm.password,
@@ -226,6 +229,13 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
   const displayEmail = userInfo?.email || "Correo no disponible";
   const displayPhone = userInfo?.phoneNumber || "Teléfono no registrado";
   const initials = getInitials(userInfo?.name || userInfo?.email || "BancUS");
+
+  const iban = userInfo?.iban || "No se ha podido obtener el iban"
+
+  const saldo = async (e) => {
+    return await accountsApi.getByIban(iban).balance
+  }
+
 
   return (
     <div className="overview-page">
@@ -451,18 +461,14 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             <div className="two-cols">
               <div>
                 <p className="label">Saldo disponible</p>
-                <p className="big-number">€ 1.234,56</p>
+                <p className="big-number">{saldo}</p>
               </div>
               <div>
                 <p className="label">IBAN</p>
-                <p>ES12 3456 7890 1234 5678 9012</p>
+                <p>{iban}</p>
                 <p className="muted">Cuenta corriente · Uso diario</p>
               </div>
             </div>
-            <p className="muted">
-              Datos de ejemplo. Llamar al microservicio de cuentas (
-              <code>/accounts/summary</code>).
-            </p>
           </ScrollSection>
 
           {/* Transacciones */}

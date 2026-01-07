@@ -62,10 +62,9 @@ function EditAccountModal({ account, onClose, onSave }) {
                             value={subscription}
                             onChange={(e) => setSubscription(e.target.value)}
                         >
-                            <option value="Free">Free</option>
-                            <option value="Basic">Basic</option>
-                            <option value="Premium">Premium</option>
-                            <option value="Enterprise">Enterprise</option>
+                            <option value="basico">basico</option>
+                            <option value="estudiante">estudiante</option>
+                            <option value="pro">pro</option>
                         </select>
                     </label>
 
