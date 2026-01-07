@@ -34,7 +34,7 @@ function NotificationsTable({ notifications, onSelect, onDelete }) {
         <col style={{ width: "35%" }} /> {/* TÍTULO */}
         <col style={{ width: "15%" }} /> {/* FECHA */}
         <col style={{ width: "15%" }} /> {/* ESTADO */}
-        <col style={{ width: "25%" }} /> {/* ACCIONES */}
+        <col style={{ width: "5%" }} /> {/* ACCIONES */}
       </colgroup>
       <thead>
         <tr>
