@@ -241,9 +241,23 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
   const iban = userInfo?.iban || "No se ha podido obtener el iban"
 
-  const saldo = async (e) => {
-    return await accountsApi.getByIban(iban).balance
-  }
+  const [saldo, setSaldo] = useState("Cargando..."); 
+
+  useEffect(() => {
+    const fetchSaldo = async () => {
+      if (isLoggedIn && iban && iban !== "No disponible") {
+        try {
+          const data = await accountsApi.getByIban(iban);
+          setSaldo(data.balance + " $"); 
+        } catch (error) {
+          console.error("Error obteniendo saldo:", error);
+          setSaldo("Error");
+        }
+      }
+    };
+
+    fetchSaldo();
+  }, [isLoggedIn, iban]);
 
 
   return (
