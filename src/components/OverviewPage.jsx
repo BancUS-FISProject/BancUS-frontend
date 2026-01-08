@@ -869,7 +869,15 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                 ))}
               </div>
             )}
-
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="link-button"
+                onClick={() => navigate("/notifications")}
+                style={{ fontSize: "0.9rem" }}
+              >
+                Ver todas las notificaciones →
+              </button>
+            </div>
           </ScrollSection>
 
           <ScrollSection
@@ -900,6 +908,15 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                 </p>
               </li>
             </ul>
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="link-button"
+                onClick={() => navigate("/statements")}
+                style={{ fontSize: "0.9rem" }}
+              >
+                Ver todos los Estados de Cuenta →
+              </button>
+            </div>
           </ScrollSection>
         </>
       )}
