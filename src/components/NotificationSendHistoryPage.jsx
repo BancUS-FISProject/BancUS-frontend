@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { notificationsApi } from "../api";
+import "./NotificationsPage.css";
 
 function NotificationSendHistoryPage() {
   const navigate = useNavigate();
@@ -7,74 +8,80 @@ function NotificationSendHistoryPage() {
   const authUser = JSON.parse(localStorage.getItem("authUser"));
   const userId = authUser?.iban;
 
-  const [month, setMonth] = useState("");
-
-  useEffect(() => {
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    setMonth(currentMonth);
-  }, []);
-
-  async function handleConfirmSend() {
+  async function handleSend(mode) {
     try {
-      if (!month) {
-        alert("Selecciona un mes");
-        return;
-      }
+      const res = await notificationsApi.sendEvent({
+        userId,
+        type: "history-request",
+        metadata: { mode: mode },
+      });
 
-      const res = await fetch(
-        "http://localhost:10000/v1/notifications/events",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: userId,
-            type: "history-request",
-            metadata: {
-              month: month,
-            },
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error();
-      }
-
-      alert(`Te hemos enviado el historial de ${month} a tu email`);
+      alert("Te hemos enviado tu historial a tu email");
       navigate("/notifications");
-    } catch {
-      alert("No se pudo enviar el historial");
+
+    } catch (e) {
+      alert(
+        e.message ||
+        "No se pudo enviar el historial"
+      );
     }
   }
 
   return (
     <div className="cards-page">
+
       <header className="cards-header">
         <h1>Enviar historial por email</h1>
-        <p>Selecciona el mes del que deseas recibir el historial</p>
+        <p>Selecciona el tipo de historial que deseas recibir</p>
       </header>
+      <div className="history-page">
+        <section className="history-options">
 
-      <section className="cards-actions">
-        <label>
-          Mes:{' '}
-          <input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          />
-        </label>
-      </section>
+          {/* HISTORIAL COMPLETO */}
+          <div className="history-card">
+            <h3>Historial completo</h3>
+            <p>Incluye todas las transferencias enviadas y recibidas.</p>
+            <button
+              className="btn-history btn-all"
+              onClick={() => handleSend("all")}
+            >
+              Enviar historial completo
+            </button>
+          </div>
 
-      <section className="history-actions">
-        <button className="btn-secondary" onClick={() => navigate("/notifications")}>
+          {/* SOLO ENVIADOS */}
+          <div className="history-card">
+            <h3>Solo enviados</h3>
+            <p>Recibirás únicamente las transferencias que has enviado.</p>
+            <button
+              className="btn-history btn-sent"
+              onClick={() => handleSend("sent")}
+            >
+              Enviar enviados
+            </button>
+          </div>
+
+          {/* SOLO RECIBIDOS */}
+          <div className="history-card">
+            <h3>Solo recibidos</h3>
+            <p>Recibirás únicamente las transferencias que has recibido.</p>
+            <button
+              className="btn-history btn-received"
+              onClick={() => handleSend("received")}
+            >
+              Enviar recibidos
+            </button>
+          </div>
+
+        </section>
+
+
+
+      </div>
+              <button className="btn-secondary" onClick={() => navigate("/notifications")}>
           Cancelar
         </button>
-        <button className="btn-primary" onClick={handleConfirmSend}>
-          Enviar historial
-        </button>
-      </section>
+
     </div>
   );
 }

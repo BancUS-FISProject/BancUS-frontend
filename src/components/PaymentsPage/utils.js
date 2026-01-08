@@ -37,3 +37,25 @@ export const DAY_ES = {
     SATURDAY: "Sábado",
     SUNDAY: "Domingo",
 }
+
+export const formatLocalDateTimeES = (utcValue) => {
+  if (!utcValue) return "-"
+
+  let v = utcValue
+
+  if (typeof v === "string" && !/[zZ]|[+-]\d{2}:\d{2}$/.test(v)) {
+    v = v + "Z"
+  }
+
+  const d = v instanceof Date ? v : new Date(v)
+  if (Number.isNaN(d.getTime())) return "-"
+
+  return d.toLocaleString("es-ES", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+}

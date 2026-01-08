@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { getAccountIdFromLocalStorage, getAuthToken, prettifyDaysOfWeek, DAY_ES } from "./utils"
+import { getAccountIdFromLocalStorage, prettifyDaysOfWeek, DAY_ES, formatLocalDateTimeES } from "./utils"
+import { schedulerApi } from "../../api"
 
 function PaymentsPage() {
   const [payments, setPayments] = useState([])
@@ -36,18 +37,8 @@ function PaymentsPage() {
         return
       }
 
-      const token = getAuthToken()
-
       try {
-        const response = await fetch(
-          `http://localhost:10000/v1/scheduled-payments/accounts/${accountId}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-          }
-        )
+        const response = await schedulerApi.getTransferByAccount(accountId)
 
         if (response.status === 404) {
           setError("La cuenta no existe")
@@ -167,8 +158,6 @@ function PaymentsPage() {
       return
     }
 
-    const token = getAuthToken()
-
     if (!form.description.trim()) return setFormError("La descripción es obligatoria")
     if (!form.beneficiaryName.trim()) return setFormError("El nombre del beneficiario es obligatorio")
     if (!form.beneficiaryIban.trim()) return setFormError("El IBAN del beneficiario es obligatorio")
@@ -189,14 +178,7 @@ function PaymentsPage() {
 
     setSubmitting(true)
     try {
-      const resp = await fetch("http://localhost:10000/v1/scheduled-payments/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      })
+      const resp = await schedulerApi.postSchedulerTransfer(payload)
 
       if (!resp.ok) {
         const txt = await resp.text().catch(() => "")
@@ -220,18 +202,8 @@ function PaymentsPage() {
 
     if (!confirmed) return
 
-    const token = getAuthToken()
-
     try {
-      const response = await fetch(
-        `http://localhost:10000/v1/scheduled-payments/${paymentId}`,
-        {
-          method: "DELETE",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
-      )
+      const response = await schedulerApi.deleteSchedulerTransfer(paymentId)
 
       if (!response.ok) {
         const txt = await response.text().catch(() => "")
@@ -357,7 +329,7 @@ function PaymentsPage() {
 
                   const onceExec =
                     freqRaw === "ONCE" && sched.executionDate
-                      ? new Date(sched.executionDate).toLocaleString()
+                      ? formatLocalDateTimeES(sched.executionDate)
                       : "-"
 
                   const amount =

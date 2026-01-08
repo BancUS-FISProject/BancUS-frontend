@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { getAccountIdFromLocalStorage, getAuthToken, prettifyDaysOfWeek } from "./utils"
+import { getAccountIdFromLocalStorage, prettifyDaysOfWeek, formatLocalDateTimeES } from "./utils"
+import { schedulerApi } from "../../api";
 
 function OverviewPaymentsPage() {
 
@@ -23,7 +24,7 @@ function OverviewPaymentsPage() {
 
         if (s.frequency === "ONCE") {
             return s.executionDate ? 
-                `Una vez · ${new Date(s.executionDate).toLocaleString()}`
+                `Una vez · ${formatLocalDateTimeES(s.executionDate)}`
             : 
                 "Una vez"
         }
@@ -62,18 +63,8 @@ function OverviewPaymentsPage() {
                 return
             }
 
-            const token = getAuthToken()
-
             try {
-                const res = await fetch(
-                    `http://localhost:10000/v1/scheduled-payments/accounts/${accountId}/upcoming?limit=2`,
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                        },
-                    }
-                )
+                const res = await schedulerApi.getUpcomingTransfer(accountId)
 
                 if (res.status === 404) {
                     setUpcomingError("La cuenta no existe.")

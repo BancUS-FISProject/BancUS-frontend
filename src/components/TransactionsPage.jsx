@@ -8,9 +8,8 @@ function TransactionsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // "Context" or Identity IBAN
+  // "Context" or Identity IBAN - obtained from localStorage
   const [identityIban, setIdentityIban] = useState("");
-  const [isIdentityLocked, setIsIdentityLocked] = useState(false);
 
   const [filter, setFilter] = useState("all"); // all, sent, received
 
@@ -36,13 +35,26 @@ function TransactionsPage() {
   }, [toast]);
 
   // Effect to load transfers when identity changes and is locked
+  // Effect to load IBAN from localStorage and then transfers
   useEffect(() => {
-    if (isIdentityLocked && identityIban) {
-      loadTransfers(identityIban);
-    } else {
-      setTransfers([]);
+    try {
+      const storedUser = localStorage.getItem("authUser");
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed && parsed.iban) {
+          setIdentityIban(parsed.iban);
+          loadTransfers(parsed.iban);
+        } else {
+          setError("No se encontró un IBAN asociado a tu usuario. Por favor, inicia sesión nuevamente.");
+        }
+      } else {
+        setError("No hay sesión activa.");
+      }
+    } catch (e) {
+      console.error(e);
+      setError("Error al recuperar la información del usuario.");
     }
-  }, [isIdentityLocked, identityIban]);
+  }, []);
 
   async function loadTransfers(iban) {
     setLoading(true);
@@ -59,7 +71,7 @@ function TransactionsPage() {
       setTransfers(all);
     } catch (err) {
       console.error(err);
-      setError("Error cargando transferencias. Verifica que el microservicio esté en el puerto 8001.");
+      setError("Error cargando transferencias. Por favor, inténtalo más tarde.");
     } finally {
       setLoading(false);
     }
@@ -106,32 +118,13 @@ function TransactionsPage() {
     }
   }
 
-  async function handleDelete(e, id) {
-    e.stopPropagation(); // Prevent opening details
-    if (!window.confirm("¿Seguro que quieres eliminar esta transacción?")) return;
 
-    try {
-      await transfersApi.delete(id);
-      showToast("Transacción eliminada correctamente", "success");
-      loadTransfers(identityIban);
-      if (selectedTransfer && selectedTransfer.id === id) setSelectedTransfer(null);
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || "Error al eliminar la transacción", "error");
-    }
-  }
 
   function showToast(message, type = "info") {
     setToast({ message, type });
   }
 
-  const handleSetIdentity = (e) => {
-    e.preventDefault();
-    if (identityIban.trim()) {
-      setIsIdentityLocked(true);
-      setError(null);
-    }
-  };
+
 
   const filteredTransfers = transfers.filter(t => {
     if (filter === "all") return true;
@@ -170,38 +163,13 @@ function TransactionsPage() {
         <p>Historial y operaciones</p>
       </header>
 
-      {/* Identity Section */}
-      <section className="cards-actions" style={{ background: "#fff", padding: "1rem", borderRadius: "8px", marginBottom: "1.5rem", border: "1px solid #eee" }}>
-        <form onSubmit={handleSetIdentity} className="cards-filter-form" style={{ width: "100%" }}>
-          <label className="holder-select-label" style={{ flex: 1 }}>
-            <span>Mi IBAN (Identidad):</span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <input
-                type="text"
-                className="iban-input"
-                style={{ flex: 1, padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-                value={identityIban}
-                onChange={(e) => setIdentityIban(e.target.value)}
-                disabled={isIdentityLocked}
-                placeholder="Ej: ES5424023756095653471493"
-                required
-              />
-              {isIdentityLocked ? (
-                <button type="button" className="btn-secondary" onClick={() => { setIsIdentityLocked(false); setTransfers([]); }}>Cambiar</button>
-              ) : (
-                <button type="submit" className="btn-primary">Fijar y Cargar</button>
-              )}
-            </div>
-          </label>
-        </form>
-      </section>
+
 
       <section className="cards-actions">
         <div className="cards-filter-form">
           <button
             className={`btn-secondary ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
-            disabled={!isIdentityLocked}
             style={filter === 'all' ? { background: '#e0e7ff', color: '#3730a3', fontWeight: 'bold' } : {}}
           >
             Todas
@@ -210,7 +178,6 @@ function TransactionsPage() {
           <button
             className={`btn-secondary ${filter === 'sent' ? 'active' : ''}`}
             onClick={() => setFilter('sent')}
-            disabled={!isIdentityLocked}
             style={filter === 'sent' ? { background: '#e0e7ff', color: '#3730a3', fontWeight: 'bold' } : {}}
           >
             Enviadas
@@ -218,7 +185,6 @@ function TransactionsPage() {
           <button
             className={`btn-secondary ${filter === 'received' ? 'active' : ''}`}
             onClick={() => setFilter('received')}
-            disabled={!isIdentityLocked}
             style={filter === 'received' ? { background: '#e0e7ff', color: '#3730a3', fontWeight: 'bold' } : {}}
           >
             Recibidas
@@ -228,7 +194,7 @@ function TransactionsPage() {
         <button
           className="btn-primary"
           onClick={() => {
-            if (!isIdentityLocked) { showToast("Fija tu IBAN primero para operar.", "error"); return; }
+            if (!identityIban) { showToast("Falta el IBAN de identidad.", "error"); return; }
             setIsCreating(true)
           }}
         >
@@ -251,8 +217,8 @@ function TransactionsPage() {
             </tr>
           </thead>
           <tbody>
-            {!isIdentityLocked ? (
-              <tr><td colSpan="6" style={{ textAlign: "center", padding: "2rem", color: "#666" }}>Introduce tu IBAN arriba para ver tus movimientos</td></tr>
+            {!identityIban ? (
+              <tr><td colSpan="6" style={{ textAlign: "center", padding: "2rem", color: "#666" }}>Cargando información del usuario...</td></tr>
             ) : loading ? (
               <tr><td colSpan="6" style={{ textAlign: "center", padding: "2rem" }}>Cargando movimientos...</td></tr>
             ) : filteredTransfers.length === 0 ? (
@@ -292,13 +258,7 @@ function TransactionsPage() {
                           >
                             Rev
                           </button>
-                          <button
-                            className="card-action-btn card-action-delete"
-                            onClick={(e) => handleDelete(e, t.id)}
-                            title="Eliminar"
-                          >
-                            ✕
-                          </button>
+
                         </>
                       )}
                     </div>
@@ -368,13 +328,7 @@ function TransactionsPage() {
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
               {selectedTransfer.sender === identityIban && (
                 <>
-                  <button
-                    className="btn-secondary"
-                    style={{ color: "#b91c1c", borderColor: "#fecaca", background: "#fef2f2" }}
-                    onClick={(e) => { handleDelete(e, selectedTransfer.id); }}
-                  >
-                    Eliminar
-                  </button>
+
                   <button
                     className="btn-secondary"
                     style={{ color: "#1d4ed8", borderColor: "#c7d2fe", background: "#eef2ff" }}
