@@ -1,5 +1,5 @@
 // Detectamos la URL base de la API de forma segura
-let API_BASE = "https://localhost:10000/v1";
+let API_BASE = "http://localhost:10000/v1";
 
 // Vite: variables tipo import.meta.env.VITE_*
 if (typeof import.meta !== "undefined" && import.meta.env) {
@@ -34,7 +34,7 @@ export function setAuthToken(token) {
 }
 
 // Detectamos URL base para el microservicio de transferencias
-let TRANSFERS_API_BASE = "https://localhost:10000/v1";
+let TRANSFERS_API_BASE = "http://localhost:10000/v1";
 if (typeof import.meta !== "undefined" && import.meta.env) {
   if (import.meta.env.VITE_TRANSFERS_API_BASE_URL) {
     TRANSFERS_API_BASE = import.meta.env.VITE_TRANSFERS_API_BASE_URL;
@@ -219,7 +219,7 @@ export const antifraudApi = {
     }),
 
   getAlertsByIban: (iban) =>
-    apiRequest(`/antifraud/users/${encodeURIComponent(iban)}/fraud-alerts`),
+    apiRequest(`/antifraud/accounts/${encodeURIComponent(iban)}/fraud-alerts`),
 
   updateAlert: (id, payload) =>
     apiRequest(`/antifraud/fraud-alerts/${id}`, {
