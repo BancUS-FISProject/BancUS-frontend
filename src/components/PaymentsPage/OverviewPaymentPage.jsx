@@ -66,19 +66,7 @@ function OverviewPaymentsPage() {
             try {
                 const res = await schedulerApi.getUpcomingTransfer(accountId)
 
-                if (res.status === 404) {
-                    setUpcomingError("La cuenta no existe.")
-                    return
-                }
-
-                if (!res.ok) {
-                    const txt = await res.text().catch(() => "")
-                    setUpcomingError(`Error obteniendo próximos pagos (${res.status}). ${txt}`)
-                    return
-                }
-
-                const data = await res.json()
-                setUpcomingPayments(Array.isArray(data) ? data : [])
+                setUpcomingPayments(Array.isArray(res) ? res : [])
             } catch {
                 setUpcomingError("No se pudo conectar con el microservicio de pagos.")
             } finally {
