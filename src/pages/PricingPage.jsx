@@ -11,7 +11,7 @@ function PricingPage() {
         "Cuenta de pruebas",
         "1 tarjeta virtual",
         "Hasta 5 transacciones al mes",
-        "Notificaciones sobre las transacciones en tiempo real",
+        "Notificaciones sobre las transacciones y los accesos en tiempo real",
         "Posibilidad de un pago programado configurado"
       ],
       highlight: false,
@@ -23,7 +23,7 @@ function PricingPage() {
       description: "Uso habitual con varias tarjetas y más límites.",
       features: [
         "Hasta 5 tarjetas virtuales",
-        "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
+        "Notificaciones de transacciones, accesos y posibles fraudes en tiempo real",
         "Condiciones específicas para universitarios",
         "Hasta 10 pagos programados posibles"
       ],
@@ -37,7 +37,7 @@ function PricingPage() {
       features: [
         "Tarjetas virtuales ilimitadas",
         "Transacciones ilimitadas",
-        "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
+        "Notificaciones de transacciones, accesos, posibles fraudes e historial en tiempo real",
         "Acceso avanzado a la API",
         "Pagos programados ilimitados"
       ],

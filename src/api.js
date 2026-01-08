@@ -99,10 +99,10 @@ export const cardsApi = {
     }),
 
   // Cambia el estado de una tarjeta (active - frozen)
-  setStatus: (id, status) =>
-    apiRequest(`/cards/status/${id}/${status}`, {
-      method: "PUT",
-    }),
+  setStatus: (pan, status) =>
+  apiRequest(`/cards/status/${encodeURIComponent(pan)}/${encodeURIComponent(status)}`, {
+    method: "PUT",
+  }),
 
   // Borra tarjeta por id
   deleteById: (id) =>
@@ -285,6 +285,21 @@ export const healthApi = {
   notifications: () => apiRequest("/notifications/health"),
   statements: () => apiRequest("/statements/health"),
   cache: () => apiRequest("/ping/cache"),
+};
+
+// Endpoints para Pagos Programados
+export const schedulerApi = {
+  getUpcomingTransfer: (accountId) => apiRequest(`/scheduled-payments/accounts/${accountId}/upcoming?limit=2`),
+  getTransferByAccount: (accountId) => apiRequest(`/scheduled-payments/accounts/${accountId}`),
+  postSchedulerTransfer: (payload) =>
+    apiRequest("/scheduled-payments/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  deleteSchedulerTransfer: (paymentId) =>
+    apiRequest(`/scheduled-payments/${paymentId}`, {
+      method: "DELETE",
+    }),
 };
 
 export { API_BASE, getStoredToken };

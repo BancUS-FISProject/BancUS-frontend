@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { accountsApi, authApi, transfersApi } from "../api";
+import { accountsApi, authApi, transfersApi, cardsApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,7 @@ const PLANS = [
       "Cuenta de pruebas",
       "1 tarjeta virtual",
       "Hasta 5 transacciones al mes",
-      "Notificaciones sobre las transacciones en tiempo real",
+      "Notificaciones sobre las transacciones y los accesos en tiempo real",
       "Posibilidad de un pago programado configurado"
     ],
     highlight: false,
@@ -29,7 +29,7 @@ const PLANS = [
     description: "Uso habitual con varias tarjetas y más límites.",
     features: [
       "Hasta 5 tarjetas virtuales",
-      "Notificaciones de transacciones, accesos y pagos programados en tiempo real",
+      "Notificaciones de transacciones, accesos y posibles fraudes en tiempo real",
       "Condiciones específicas para universitarios",
       "Hasta 10 pagos programados posibles"
     ],
@@ -43,7 +43,7 @@ const PLANS = [
     features: [
       "Tarjetas virtuales ilimitadas",
       "Transacciones ilimitadas",
-      "Notificaciones de transacciones, accesos, pagos programados e historial en tiempo real",
+      "Notificaciones de transacciones, accesos, posibles fraudes e historial en tiempo real",
       "Acceso avanzado a la API",
       "Pagos programados ilimitados"
     ],
@@ -83,16 +83,36 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   });
 
+const [account, setAccount] = useState(null);
+const [accountLoading, setAccountLoading] = useState(false);
+const [accountError, setAccountError] = useState("");
+
+const [userCards, setUserCards] = useState([]);
+const [cardsLoading, setCardsLoading] = useState(false);
+const [cardsError, setCardsError] = useState("");
+
+const maskPan = (pan) => {
+  if (!pan) return "PAN no disponible";
+  const digits = String(pan).replace(/\s+/g, "");
+  const last4 = digits.slice(-4);
+  return `**** **** **** ${last4}`;
+};
+
+
   const persistUserInfo = (info) => {
-    setUserInfo(info);
-    if (typeof localStorage !== "undefined") {
-      if (info) {
-        localStorage.setItem("authUser", JSON.stringify(info));
-      } else {
-        localStorage.removeItem("authUser");
-      }
-    }
-  };
+  setUserInfo(info);
+
+  if (typeof localStorage === "undefined") return;
+
+  if (info) {
+    localStorage.setItem("authUser", JSON.stringify(info));
+    if (info.iban) localStorage.setItem("userIban", info.iban);
+  } else {
+    localStorage.removeItem("authUser");
+    localStorage.removeItem("userIban");
+  }
+};
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -119,6 +139,67 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     setLoginForm((prev) => ({ ...prev, captchaToken: "" }));
     setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
   }, [mode]);
+
+useEffect(() => {
+  if (!isLoggedIn) return;
+
+  const userIban =
+    userInfo?.iban ||
+    (typeof localStorage !== "undefined" ? localStorage.getItem("userIban") : "");
+
+  if (!userIban) {
+    setAccount(null);
+    setUserCards([]);
+    setAccountError("No se encontró el IBAN del usuario para cargar el resumen.");
+    return;
+  }
+
+  let cancelled = false;
+
+  (async () => {
+    try {
+      setAccountError("");
+      setCardsError("");
+      setAccountLoading(true);
+      setCardsLoading(true);
+
+      // Igual que AccountsPage: la cuenta viene del microservicio accounts (con JWT)
+      const acc = await accountsApi.getByIban(userIban);
+
+      if (cancelled) return;
+
+      setAccount(acc || null);
+
+      // IMPORTANTE: aquí está el “igual que AccountsPage”
+      // Normalmente la cuenta trae las tarjetas en una propiedad tipo "cards".
+      const cardsFromAccount =
+        acc?.cards || acc?.tarjetas || acc?.cardList || acc?.cardsList || [];
+
+      setUserCards(Array.isArray(cardsFromAccount) ? cardsFromAccount : []);
+    } catch (e) {
+      if (cancelled) return;
+      setAccount(null);
+      setUserCards([]);
+
+      // Si aquí sale Unauthorized, ya es 100% que el JWT no está llegando:
+      // arreglar onLogin (await) o el interceptor/global header.
+      const msg = e?.message || "Error cargando la cuenta.";
+      setAccountError(msg);
+      setCardsError(msg);
+    } finally {
+      if (!cancelled) {
+        setAccountLoading(false);
+        setCardsLoading(false);
+      }
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, [isLoggedIn, userInfo?.iban]);
+
+
 
   const handleCaptchaChange = (token) => {
     if (mode === "login") {
@@ -156,7 +237,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
           loginForm.password,
           loginForm.captchaToken
         );
-        onLogin && onLogin(res.access_token);
+        if (onLogin) await onLogin(res.access_token);
+
         try {
           const profile = await authApi.getUserByIdentifier(loginForm.email);
           persistUserInfo({
@@ -251,6 +333,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   }, [isLoggedIn, userInfo]);
 
+
   const fetchRecentTransfers = async (userIban) => {
     setLoadingTransfers(true);
     try {
@@ -267,21 +350,6 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
   const [saldo, setSaldo] = useState("Cargando...");
 
-  useEffect(() => {
-    const fetchSaldo = async () => {
-      if (isLoggedIn && iban && iban !== "No disponible") {
-        try {
-          const data = await accountsApi.getByIban(iban);
-          setSaldo(data.balance + " $");
-        } catch (error) {
-          console.error("Error obteniendo saldo:", error);
-          setSaldo("Error");
-        }
-      }
-    };
-
-    fetchSaldo();
-  }, [isLoggedIn, iban]);
 
 
   const [notifications, setNotifications] = useState([]);
@@ -539,22 +607,78 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
           {/* Resumen de cuenta */}
           <ScrollSection
-            id="account"
-            title="Resumen de la cuenta"
-            subtitle="Saldo e información básica de tu cuenta principal."
-          >
-            <div className="two-cols">
-              <div>
-                <p className="label">Saldo disponible</p>
-                <p className="big-number">{saldo}</p>
-              </div>
-              <div>
-                <p className="label">IBAN</p>
-                <p>{iban}</p>
-                <p className="muted">Cuenta corriente · Uso diario</p>
-              </div>
-            </div>
-          </ScrollSection>
+  id="account"
+  title="Resumen de la cuenta"
+  subtitle="Saldo e información básica de tu cuenta principal."
+>
+  {accountLoading ? (
+    <p className="muted">Cargando cuenta…</p>
+  ) : accountError ? (
+    <p className="error-message">{accountError}</p>
+  ) : account ? (
+    <div className="two-cols">
+      <div>
+        <p className="label">Saldo disponible</p>
+        <p className="big-number">
+          € {Number(account.balance ?? account.availableBalance ?? 0).toFixed(2)}
+        </p>
+        <p className="muted">{account.currency || "EUR"}</p>
+      </div>
+      <div>
+        <p className="label">IBAN</p>
+        <p>{account.iban || userInfo?.iban || localStorage.getItem("userIban")}</p>
+        <p className="muted">{account.accountType || "Cuenta corriente · Uso diario"}</p>
+      </div>
+    </div>
+  ) : (
+    <p className="muted">No se encontraron datos de cuenta.</p>
+  )}
+
+  <div style={{ marginTop: 16 }}>
+    <p className="label">Tus tarjetas</p>
+
+    {cardsLoading ? (
+      <p className="muted">Cargando tarjetas…</p>
+    ) : cardsError ? (
+      <p className="error-message">{cardsError}</p>
+    ) : userCards.length === 0 ? (
+      <p className="muted">No hay tarjetas asociadas a la cuenta.</p>
+    ) : (
+      <div className="list-block">
+        {userCards.slice(0, 5).map((c) => (
+          <div className="list-row" key={c.PAN || c._id}>
+            <span>
+              {maskPan(c.PAN)}{" "}
+              <span className="muted">
+                · {c.cardholderName || "Titular"} · {c.cardType || "Virtual"}
+              </span>
+            </span>
+            <span>
+              {String(c.cardFreeze || c.status || "")
+                .toLowerCase()
+                .includes("frozen")
+                ? "Congelada"
+                : "Activa"}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <button
+      type="button"
+      className="btn-secondary"
+      style={{ marginTop: 12 }}
+      onClick={() => navigate("/cards")}
+    >
+      Ver todas las tarjetas
+    </button>
+  </div>
+</ScrollSection>
+
+
+
+
 
           <ScrollSection
             id="transactions"
