@@ -13,7 +13,7 @@ button:disabled {
 
 .actions-cell {
   display: flex;
-  gap: 8px;
+  justify-content: center;
 }
 
 /* Botón base */
@@ -53,32 +53,181 @@ button:disabled {
   background-color: #fecaca;
 }
 
-.modal-overlay {
+.history-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.actions-cell button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.history-page {
+  padding: 2rem;
+}
+
+.history-header {
+  margin-bottom: 2rem;
+}
+
+.history-header h1 {
+  margin-bottom: 0.25rem;
+}
+
+.history-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+/* Card */
+.history-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.history-card h3 {
+  margin-bottom: 0.75rem;
+}
+
+.history-card p {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+
+
+/* === VARIANTES DE COLOR (discretas, como tarjetas) === */
+
+/* Historial completo → azul */
+.btn-all {
+  background: #eef2ff;
+  color: #1d4ed8;
+  border-color: #c7d2fe;
+}
+
+.btn-all:hover {
+  background: #e0e7ff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(129, 140, 248, 0.35);
+  border-color: #0d2fb8;
+}
+
+/* Solo enviados → verde */
+.btn-sent {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+
+.btn-sent:hover {
+  background: #dcfce7;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(34, 197, 94, 0.3);
+  border-color: #023a10;
+}
+
+/* Solo recibidos → violeta */
+.btn-received {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #ddd6fe;
+}
+
+.btn-received:hover {
+  background: #ede9fe;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(167, 139, 250, 0.35);
+  border-color: #8b0c9c;
+}
+
+/* Fondo oscuro detrás del modal (si no lo tienes ya) */
+.modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 
+/* Modal de detalle */
 .modal {
-  background: white;
-  padding: 24px;
-  border-radius: 12px;
-  width: 320px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 2rem 2.2rem;
+
+  width: 100%;
+  max-width: 620px;        /* ⬅️ aquí lo hacemos más grande */
+  min-height: 260px;
+
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.modal-actions {
-  margin-top: 20px;
+/* Título */
+.modal h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+/* Texto */
+.modal p {
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #374151;
+}
+
+/* Separador */
+.modal hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0.75rem 0;
+}
+
+/* Botonera */
+.modal > div:last-child {
+  margin-top: auto;       /* ⬅️ empuja botones abajo */
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 0.75rem;
 }
 
-.history-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 24px;
+.modal {
+  animation: modalIn 0.2s ease-out;
 }
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.cards-table tbody tr {
+  box-shadow: inset 0 -1px 0 #e5e7eb;
+}
+
+.cards-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { getAccountIdFromLocalStorage, getAuthToken, prettifyDaysOfWeek } from "./utils"
+import { getAccountIdFromLocalStorage, getAuthToken, prettifyDaysOfWeek, formatLocalDateTimeES } from "./utils"
 
 function OverviewPaymentsPage() {
 
@@ -23,7 +23,7 @@ function OverviewPaymentsPage() {
 
         if (s.frequency === "ONCE") {
             return s.executionDate ? 
-                `Una vez · ${new Date(s.executionDate).toLocaleString()}`
+                `Una vez · ${formatLocalDateTimeES(s.executionDate)}`
             : 
                 "Una vez"
         }

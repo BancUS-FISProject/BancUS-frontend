@@ -1,3 +1,5 @@
+import React from "react";
+import "./NotificationsPage.css";
 export function NotificationDetail({ notification, onClose, onDelete }) {
   return (
     <div className="modal">

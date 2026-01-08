@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { accountsApi, authApi } from "../api";
+import { accountsApi, authApi, transfersApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
 import OverviewPaymentsPage from "./PaymentsPage/OverviewPaymentPage";
+import { notificationsApi } from "../api";
 
 const PLANS = [
   {
@@ -175,8 +176,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             phoneNumber: "No disponible",
             plan: "basico",
           });
-      }
-    } else {
+        }
+      } else {
         const payload = {
           name: registerForm.name,
           email: registerForm.email,
@@ -214,7 +215,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         }
       }
     } catch (err) {
-        setFormError(formatError(err));
+      setFormError(formatError(err));
     } finally {
       setFormLoading(false);
       recaptchaRef.current?.reset();
@@ -241,14 +242,37 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
   const iban = userInfo?.iban || "No se ha podido obtener el iban"
 
-  const [saldo, setSaldo] = useState("Cargando..."); 
+  const [recentTransfers, setRecentTransfers] = useState([]);
+  const [loadingTransfers, setLoadingTransfers] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn && userInfo?.iban) {
+      fetchRecentTransfers(userInfo.iban);
+    }
+  }, [isLoggedIn, userInfo]);
+
+  const fetchRecentTransfers = async (userIban) => {
+    setLoadingTransfers(true);
+    try {
+      const data = await transfersApi.getByUser(userIban);
+      // Ordenar por ID descendente (lo más reciente arriba) y coger los 5 primeros
+      const sorted = (Array.isArray(data) ? data : []).sort((a, b) => (b.id || 0) - (a.id || 0));
+      setRecentTransfers(sorted.slice(0, 5));
+    } catch (err) {
+      console.error("Error fetching transfers on overview", err);
+    } finally {
+      setLoadingTransfers(false);
+    }
+  };
+
+  const [saldo, setSaldo] = useState("Cargando...");
 
   useEffect(() => {
     const fetchSaldo = async () => {
       if (isLoggedIn && iban && iban !== "No disponible") {
         try {
           const data = await accountsApi.getByIban(iban);
-          setSaldo(data.balance + " $"); 
+          setSaldo(data.balance + " $");
         } catch (error) {
           console.error("Error obteniendo saldo:", error);
           setSaldo("Error");
@@ -259,6 +283,44 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     fetchSaldo();
   }, [isLoggedIn, iban]);
 
+
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [errorNotifications, setErrorNotifications] = useState(null);
+
+  const userId = userInfo?.iban;
+
+  useEffect(() => {
+    if (userId) {
+      loadNotifications();
+    }
+  }, [userId]);
+
+  async function loadNotifications() {
+    setLoadingNotifications(true);
+    setErrorNotifications(null);
+
+    try {
+      const data = await notificationsApi.getByUser(userId);
+
+      const visibleNotifications = (Array.isArray(data) ? data : [])
+        .filter(n => n.email_sent !== false)
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        )
+        .slice(0, 3);
+
+      setNotifications(visibleNotifications);
+    } catch (err) {
+      console.error(err);
+      setErrorNotifications(err.message || "Error cargando notificaciones");
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }
 
   return (
     <div className="overview-page">
@@ -398,8 +460,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                   {formLoading
                     ? "Procesando..."
                     : mode === "login"
-                    ? "Iniciar sesión"
-                    : "Crear cuenta"}
+                      ? "Iniciar sesión"
+                      : "Crear cuenta"}
                 </button>
               </div>
             </form>
@@ -494,30 +556,41 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             </div>
           </ScrollSection>
 
-          {/* Transacciones */}
           <ScrollSection
             id="transactions"
             title="Transacciones recientes"
             subtitle="Últimos movimientos registrados."
           >
-            <div className="list-block">
-              <div className="list-row">
-                <span>Pago supermercado</span>
-                <span className="neg">-€ 45,20</span>
+            {loadingTransfers ? (
+              <p>Cargando movimientos...</p>
+            ) : recentTransfers.length === 0 ? (
+              <p className="muted">No hay movimientos recientes.</p>
+            ) : (
+              <div className="list-block">
+                {recentTransfers.map((t) => {
+                  const isIncoming = t.receiver === iban;
+                  const amountClass = isIncoming ? "pos" : "neg";
+                  const sign = isIncoming ? "+" : "-";
+                  const label = isIncoming ? `De ${t.sender}` : `A ${t.receiver}`;
+
+                  return (
+                    <div className="list-row" key={t.id}>
+                      <span>{label}</span>
+                      <span className={amountClass}>{sign}€ {t.quantity}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="list-row">
-                <span>Nómina</span>
-                <span className="pos">+€ 1.200,00</span>
-              </div>
-              <div className="list-row">
-                <span>Suscripción streaming</span>
-                <span className="neg">-€ 12,99</span>
-              </div>
+            )}
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="link-button"
+                onClick={() => navigate("/transactions")}
+                style={{ fontSize: "0.9rem" }}
+              >
+                Ver todo el historial &rarr;
+              </button>
             </div>
-            <p className="muted">
-              Aquí hablarías con el microservicio de transacciones (
-              <code>/transactions?limit=10</code>).
-            </p>
           </ScrollSection>
 
           {/* Antifraude */}
@@ -571,7 +644,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Pagos programados"
             subtitle="Cargos automáticos previstos."
           >
-            <OverviewPaymentsPage/>
+            <OverviewPaymentsPage />
           </ScrollSection>
 
           {/* Notificaciones */}
@@ -580,15 +653,39 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Notificaciones"
             subtitle="Avisos importantes sobre tu cuenta."
           >
-            <ul className="notifications-list">
-              <li>Nueva tarjeta emitida el 26/11/2025.</li>
-              <li>Actualización de condiciones de la cuenta.</li>
-              <li>Compra online inusual revisada y aceptada.</li>
-            </ul>
-            <p className="muted">
-              Aquí iría el microservicio de notificaciones (
-              <code>/notifications</code>).
-            </p>
+            {loadingNotifications ? (
+              <p>Cargando notificaciones...</p>
+            ) : notifications.length === 0 ? (
+              <p className="muted">No tienes notificaciones recientes.</p>
+            ) : (
+              <div className="list-block">
+                {/* Cabecera */}
+                <div className="list-row list-row-header">
+                  <span className="label">Concepto</span>
+                  <span className="label">Fecha</span>
+                </div>
+
+                {/* Filas */}
+                {notifications.map((n) => (
+                  <div className="list-row" key={n.id}>
+                    <span>{n.title || n.type}</span>
+                    <span className="muted small">
+                      {new Date(n.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="link-button"
+                onClick={() => navigate("/notifications")}
+                style={{ fontSize: "0.9rem" }}
+              >
+                Ver todas las notificaciones →
+              </button>
+            </div>
           </ScrollSection>
         </>
       )}
