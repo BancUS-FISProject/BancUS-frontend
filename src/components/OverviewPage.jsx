@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { accountsApi, authApi } from "../api";
+import { accountsApi, authApi, transfersApi, cardsApi } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -82,16 +82,36 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   });
 
+const [account, setAccount] = useState(null);
+const [accountLoading, setAccountLoading] = useState(false);
+const [accountError, setAccountError] = useState("");
+
+const [userCards, setUserCards] = useState([]);
+const [cardsLoading, setCardsLoading] = useState(false);
+const [cardsError, setCardsError] = useState("");
+
+const maskPan = (pan) => {
+  if (!pan) return "PAN no disponible";
+  const digits = String(pan).replace(/\s+/g, "");
+  const last4 = digits.slice(-4);
+  return `**** **** **** ${last4}`;
+};
+
+
   const persistUserInfo = (info) => {
-    setUserInfo(info);
-    if (typeof localStorage !== "undefined") {
-      if (info) {
-        localStorage.setItem("authUser", JSON.stringify(info));
-      } else {
-        localStorage.removeItem("authUser");
-      }
-    }
-  };
+  setUserInfo(info);
+
+  if (typeof localStorage === "undefined") return;
+
+  if (info) {
+    localStorage.setItem("authUser", JSON.stringify(info));
+    if (info.iban) localStorage.setItem("userIban", info.iban);
+  } else {
+    localStorage.removeItem("authUser");
+    localStorage.removeItem("userIban");
+  }
+};
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -118,6 +138,67 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     setLoginForm((prev) => ({ ...prev, captchaToken: "" }));
     setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
   }, [mode]);
+
+useEffect(() => {
+  if (!isLoggedIn) return;
+
+  const userIban =
+    userInfo?.iban ||
+    (typeof localStorage !== "undefined" ? localStorage.getItem("userIban") : "");
+
+  if (!userIban) {
+    setAccount(null);
+    setUserCards([]);
+    setAccountError("No se encontró el IBAN del usuario para cargar el resumen.");
+    return;
+  }
+
+  let cancelled = false;
+
+  (async () => {
+    try {
+      setAccountError("");
+      setCardsError("");
+      setAccountLoading(true);
+      setCardsLoading(true);
+
+      // Igual que AccountsPage: la cuenta viene del microservicio accounts (con JWT)
+      const acc = await accountsApi.getByIban(userIban);
+
+      if (cancelled) return;
+
+      setAccount(acc || null);
+
+      // IMPORTANTE: aquí está el “igual que AccountsPage”
+      // Normalmente la cuenta trae las tarjetas en una propiedad tipo "cards".
+      const cardsFromAccount =
+        acc?.cards || acc?.tarjetas || acc?.cardList || acc?.cardsList || [];
+
+      setUserCards(Array.isArray(cardsFromAccount) ? cardsFromAccount : []);
+    } catch (e) {
+      if (cancelled) return;
+      setAccount(null);
+      setUserCards([]);
+
+      // Si aquí sale Unauthorized, ya es 100% que el JWT no está llegando:
+      // arreglar onLogin (await) o el interceptor/global header.
+      const msg = e?.message || "Error cargando la cuenta.";
+      setAccountError(msg);
+      setCardsError(msg);
+    } finally {
+      if (!cancelled) {
+        setAccountLoading(false);
+        setCardsLoading(false);
+      }
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+  };
+}, [isLoggedIn, userInfo?.iban]);
+
+
 
   const handleCaptchaChange = (token) => {
     if (mode === "login") {
@@ -155,7 +236,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
           loginForm.password,
           loginForm.captchaToken
         );
-        onLogin && onLogin(res.access_token);
+        if (onLogin) await onLogin(res.access_token);
+
         try {
           const profile = await authApi.getUserByIdentifier(loginForm.email);
           persistUserInfo({
@@ -175,8 +257,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             phoneNumber: "No disponible",
             plan: "basico",
           });
-      }
-    } else {
+        }
+      } else {
         const payload = {
           name: registerForm.name,
           email: registerForm.email,
@@ -214,7 +296,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         }
       }
     } catch (err) {
-        setFormError(formatError(err));
+      setFormError(formatError(err));
     } finally {
       setFormLoading(false);
       recaptchaRef.current?.reset();
@@ -241,23 +323,32 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
   const iban = userInfo?.iban || "No se ha podido obtener el iban"
 
-  const [saldo, setSaldo] = useState("Cargando..."); 
+  const [recentTransfers, setRecentTransfers] = useState([]);
+  const [loadingTransfers, setLoadingTransfers] = useState(false);
 
   useEffect(() => {
-    const fetchSaldo = async () => {
-      if (isLoggedIn && iban && iban !== "No disponible") {
-        try {
-          const data = await accountsApi.getByIban(iban);
-          setSaldo(data.balance + " $"); 
-        } catch (error) {
-          console.error("Error obteniendo saldo:", error);
-          setSaldo("Error");
-        }
-      }
-    };
+    if (isLoggedIn && userInfo?.iban) {
+      fetchRecentTransfers(userInfo.iban);
+    }
+  }, [isLoggedIn, userInfo]);
 
-    fetchSaldo();
-  }, [isLoggedIn, iban]);
+
+  const fetchRecentTransfers = async (userIban) => {
+    setLoadingTransfers(true);
+    try {
+      const data = await transfersApi.getByUser(userIban);
+      // Ordenar por ID descendente (lo más reciente arriba) y coger los 5 primeros
+      const sorted = (Array.isArray(data) ? data : []).sort((a, b) => (b.id || 0) - (a.id || 0));
+      setRecentTransfers(sorted.slice(0, 5));
+    } catch (err) {
+      console.error("Error fetching transfers on overview", err);
+    } finally {
+      setLoadingTransfers(false);
+    }
+  };
+
+  const [saldo, setSaldo] = useState("Cargando...");
+
 
 
   return (
@@ -398,8 +489,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                   {formLoading
                     ? "Procesando..."
                     : mode === "login"
-                    ? "Iniciar sesión"
-                    : "Crear cuenta"}
+                      ? "Iniciar sesión"
+                      : "Crear cuenta"}
                 </button>
               </div>
             </form>
@@ -477,47 +568,114 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
           {/* Resumen de cuenta */}
           <ScrollSection
-            id="account"
-            title="Resumen de la cuenta"
-            subtitle="Saldo e información básica de tu cuenta principal."
-          >
-            <div className="two-cols">
-              <div>
-                <p className="label">Saldo disponible</p>
-                <p className="big-number">{saldo}</p>
-              </div>
-              <div>
-                <p className="label">IBAN</p>
-                <p>{iban}</p>
-                <p className="muted">Cuenta corriente · Uso diario</p>
-              </div>
-            </div>
-          </ScrollSection>
+  id="account"
+  title="Resumen de la cuenta"
+  subtitle="Saldo e información básica de tu cuenta principal."
+>
+  {accountLoading ? (
+    <p className="muted">Cargando cuenta…</p>
+  ) : accountError ? (
+    <p className="error-message">{accountError}</p>
+  ) : account ? (
+    <div className="two-cols">
+      <div>
+        <p className="label">Saldo disponible</p>
+        <p className="big-number">
+          € {Number(account.balance ?? account.availableBalance ?? 0).toFixed(2)}
+        </p>
+        <p className="muted">{account.currency || "EUR"}</p>
+      </div>
+      <div>
+        <p className="label">IBAN</p>
+        <p>{account.iban || userInfo?.iban || localStorage.getItem("userIban")}</p>
+        <p className="muted">{account.accountType || "Cuenta corriente · Uso diario"}</p>
+      </div>
+    </div>
+  ) : (
+    <p className="muted">No se encontraron datos de cuenta.</p>
+  )}
 
-          {/* Transacciones */}
+  <div style={{ marginTop: 16 }}>
+    <p className="label">Tus tarjetas</p>
+
+    {cardsLoading ? (
+      <p className="muted">Cargando tarjetas…</p>
+    ) : cardsError ? (
+      <p className="error-message">{cardsError}</p>
+    ) : userCards.length === 0 ? (
+      <p className="muted">No hay tarjetas asociadas a la cuenta.</p>
+    ) : (
+      <div className="list-block">
+        {userCards.slice(0, 5).map((c) => (
+          <div className="list-row" key={c.PAN || c._id}>
+            <span>
+              {maskPan(c.PAN)}{" "}
+              <span className="muted">
+                · {c.cardholderName || "Titular"} · {c.cardType || "Virtual"}
+              </span>
+            </span>
+            <span>
+              {String(c.cardFreeze || c.status || "")
+                .toLowerCase()
+                .includes("frozen")
+                ? "Congelada"
+                : "Activa"}
+            </span>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <button
+      type="button"
+      className="btn-secondary"
+      style={{ marginTop: 12 }}
+      onClick={() => navigate("/cards")}
+    >
+      Ver todas las tarjetas
+    </button>
+  </div>
+</ScrollSection>
+
+
+
+
+
           <ScrollSection
             id="transactions"
             title="Transacciones recientes"
             subtitle="Últimos movimientos registrados."
           >
-            <div className="list-block">
-              <div className="list-row">
-                <span>Pago supermercado</span>
-                <span className="neg">-€ 45,20</span>
+            {loadingTransfers ? (
+              <p>Cargando movimientos...</p>
+            ) : recentTransfers.length === 0 ? (
+              <p className="muted">No hay movimientos recientes.</p>
+            ) : (
+              <div className="list-block">
+                {recentTransfers.map((t) => {
+                  const isIncoming = t.receiver === iban;
+                  const amountClass = isIncoming ? "pos" : "neg";
+                  const sign = isIncoming ? "+" : "-";
+                  const label = isIncoming ? `De ${t.sender}` : `A ${t.receiver}`;
+
+                  return (
+                    <div className="list-row" key={t.id}>
+                      <span>{label}</span>
+                      <span className={amountClass}>{sign}€ {t.quantity}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="list-row">
-                <span>Nómina</span>
-                <span className="pos">+€ 1.200,00</span>
-              </div>
-              <div className="list-row">
-                <span>Suscripción streaming</span>
-                <span className="neg">-€ 12,99</span>
-              </div>
+            )}
+            <div style={{ marginTop: "1rem" }}>
+              <button
+                className="link-button"
+                onClick={() => navigate("/transactions")}
+                style={{ fontSize: "0.9rem" }}
+              >
+                Ver todo el historial &rarr;
+              </button>
             </div>
-            <p className="muted">
-              Aquí hablarías con el microservicio de transacciones (
-              <code>/transactions?limit=10</code>).
-            </p>
           </ScrollSection>
 
           {/* Antifraude */}
@@ -571,7 +729,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Pagos programados"
             subtitle="Cargos automáticos previstos."
           >
-            <OverviewPaymentsPage/>
+            <OverviewPaymentsPage />
           </ScrollSection>
 
           {/* Notificaciones */}
