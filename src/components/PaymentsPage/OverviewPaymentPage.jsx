@@ -67,8 +67,8 @@ function OverviewPaymentsPage() {
                 const res = await schedulerApi.getUpcomingTransfer(accountId)
 
                 setUpcomingPayments(Array.isArray(res) ? res : [])
-            } catch {
-                setUpcomingError("No se pudo conectar con el microservicio de pagos.")
+            } catch (error) {
+                setUpcomingError(`Error al obtener próximos pagos programados: ${error.message}`)
             } finally {
                 setUpcomingLoading(false)
             }

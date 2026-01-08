@@ -41,8 +41,8 @@ function PaymentsPage() {
         const response = await schedulerApi.getTransferByAccount(accountId)
 
         setPayments(Array.isArray(response) ? response : [])
-      } catch {
-        setError("No se pudo conectar con el backend")
+      } catch (error) {
+        setError(`Error al obtener los pagos programados: ${error.message}`)
       } finally {
         setLoading(false)
       }
@@ -171,8 +171,8 @@ function PaymentsPage() {
 
       closeModal()
       await loadPayments()
-    } catch {
-      setFormError("No se pudo conectar con el backend")
+    } catch(error) {
+      setFormError(`Error al crear el pago programado: ${error.message}`)
     } finally {
       setSubmitting(false)
     }
