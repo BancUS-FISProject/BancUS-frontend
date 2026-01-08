@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { antifraudApi } from "../api";
 import "./FraudPage.css";
 
@@ -12,20 +12,19 @@ const statusLabels = {
 const statusOrder = ["PENDING", "REVIEWED", "CONFIRMED", "FALSE_POSITIVE"];
 
 function FraudPage() {
-  const [searchIban, setSearchIban] = useState("");
+  const [userIban] = useState(() => {
+    if (typeof localStorage === "undefined") return "";
+    try {
+      const stored = localStorage.getItem("authUser");
+      const parsed = stored ? JSON.parse(stored) : null;
+      return parsed?.iban || "";
+    } catch {
+      return "";
+    }
+  });
   const [alerts, setAlerts] = useState([]);
-  const [alertsMessage, setAlertsMessage] = useState("");
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [alertsError, setAlertsError] = useState(null);
-
-  const [formData, setFormData] = useState({
-    origin: "",
-    destination: "",
-    amount: "",
-    transactionDate: new Date().toISOString().slice(0, 16),
-  });
-  const [checkResult, setCheckResult] = useState(null);
-  const [checking, setChecking] = useState(false);
 
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [updateData, setUpdateData] = useState({ status: "", reason: "" });
@@ -42,18 +41,13 @@ function FraudPage() {
     if (!iban) return;
     setAlertsLoading(true);
     setAlertsError(null);
-    setAlertsMessage("");
     setSelectedAlert(null);
     try {
       const data = await antifraudApi.getAlertsByIban(iban);
       setAlerts(data || []);
-      if (!data || data.length === 0) {
-        setAlertsMessage("No hay alertas para este IBAN.");
-      }
     } catch (err) {
       if (err.status === 404) {
         setAlerts([]);
-        setAlertsMessage("No hay alertas para este IBAN.");
       } else {
         console.error(err);
         setAlertsError(err.message || "Error obteniendo alertas");
@@ -63,46 +57,15 @@ function FraudPage() {
     }
   }
 
-  async function handleSearch(e) {
-    e?.preventDefault();
-    if (!searchIban.trim()) {
-      setAlertsError("Introduce un IBAN para buscar alertas.");
+  useEffect(() => {
+    if (!userIban) {
+      setAlerts([]);
+      setAlertsError(null);
+      setAlertsError("No se ha podido obtener el IBAN del usuario actual.");
       return;
     }
-    fetchAlerts(searchIban.trim());
-  }
-
-  async function handleCheckTransaction(e) {
-    e?.preventDefault();
-    setChecking(true);
-    setCheckResult(null);
-    try {
-      const payload = {
-        ...formData,
-        amount: Number(formData.amount),
-        transactionDate: formData.transactionDate
-          ? new Date(formData.transactionDate).toISOString()
-          : new Date().toISOString(),
-      };
-      const res = await antifraudApi.checkTransaction(payload);
-      setCheckResult({
-        type: "success",
-        message: res?.message || "Transacción evaluada.",
-      });
-      if (payload.origin) {
-        setSearchIban(payload.origin);
-        fetchAlerts(payload.origin);
-      }
-    } catch (err) {
-      console.error(err);
-      setCheckResult({
-        type: "error",
-        message: err.message || "Error al evaluar la transacción.",
-      });
-    } finally {
-      setChecking(false);
-    }
-  }
+    fetchAlerts(userIban);
+  }, [userIban]);
 
   function handleSelect(alert) {
     setSelectedAlert(alert);
@@ -187,112 +150,34 @@ function FraudPage() {
           <p className="eyebrow">Seguridad</p>
           <h1>Centro Anti-Fraude</h1>
           <p className="subtitle">
-            Evalúa transacciones, revisa alertas y actualiza su estado desde un
-            mismo panel.
+            Revisa alertas y actualiza su estado desde un mismo panel.
           </p>
         </div>
-        <form className="search-box" onSubmit={handleSearch}>
-          <label>Buscar alertas por IBAN</label>
-          <div className="search-row">
-            <input
-              type="text"
-              placeholder="ES00..."
-              value={searchIban}
-              onChange={(e) => setSearchIban(e.target.value)}
-            />
-            <button type="submit" className="btn primary">
-              Buscar
-            </button>
-          </div>
-          {alertsError && <p className="error-text">{alertsError}</p>}
-          {alertsMessage && <p className="muted">{alertsMessage}</p>}
-        </form>
-      </div>
-
-      <div className="fraud-grid">
-        <div className="card">
-          <h3>Evaluar transacción</h3>
-          <p className="muted">
-            Comprueba rápidamente si una operación es sospechosa.
-          </p>
-          <form className="form-grid" onSubmit={handleCheckTransaction}>
-            <label>
-              IBAN origen
-              <input
-                type="text"
-                value={formData.origin}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, origin: e.target.value }))
-                }
-                required
-              />
-            </label>
-            <label>
-              IBAN destino
-              <input
-                type="text"
-                value={formData.destination}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    destination: e.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-            <label>
-              Importe (€)
-              <input
-                type="number"
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    amount: e.target.value,
-                  }))
-                }
-                min="0"
-                step="0.01"
-                required
-              />
-            </label>
-            <label>
-              Fecha de la operación
-              <input
-                type="datetime-local"
-                value={formData.transactionDate}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    transactionDate: e.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-            <button type="submit" className="btn primary" disabled={checking}>
-              {checking ? "Evaluando..." : "Comprobar riesgo"}
-            </button>
-          </form>
-          {checkResult && (
-            <div
-              className={`result-badge ${
-                checkResult.type === "success" ? "ok" : "error"
-              }`}
+        <div className="fraud-top-row">
+          <div className="search-box">
+            <label>Usuario actual</label>
+            <p className="muted">
+              IBAN: {userIban || "No disponible"}
+            </p>
+            <button
+              type="button"
+              className="btn primary"
+              onClick={() => fetchAlerts(userIban)}
+              disabled={!userIban || alertsLoading}
             >
-              {checkResult.message}
-            </div>
-          )}
-        </div>
+              {alertsLoading ? "Actualizando..." : "Actualizar alertas"}
+            </button>
+            {alertsError && <p className="error-text">{alertsError}</p>}
+          </div>
 
-        <div className="kpi-grid">
-          {statusOrder.map((status) => (
-            <div key={status} className={`card kpi ${status.toLowerCase()}`}>
-              <p className="label">{statusLabels[status]}</p>
-              <p className="kpi-value">{statusCounts[status] || 0}</p>
-            </div>
-          ))}
+          <div className="kpi-grid">
+            {statusOrder.map((status) => (
+              <div key={status} className={`card kpi ${status.toLowerCase()}`}>
+                <p className="label">{statusLabels[status]}</p>
+                <p className="kpi-value">{statusCounts[status] || 0}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -313,10 +198,10 @@ function FraudPage() {
                 <th>Origen</th>
                 <th>Destino</th>
                 <th>Importe</th>
-                <th>Fecha tx</th>
                 <th>Estado</th>
-                <th>Motivo</th>
                 <th>Acciones</th>
+                <th>Motivo</th>
+                <th>Fecha tx</th>
               </tr>
             </thead>
             <tbody>
@@ -333,13 +218,11 @@ function FraudPage() {
                   <td>{alert.origin}</td>
                   <td>{alert.destination}</td>
                   <td>{Number(alert.amount).toFixed(2)} €</td>
-                  <td>{formatDate(alert.transactionDate)}</td>
                   <td>
                     <span className={`status-badge ${alert.status}`}>
                       {statusLabels[alert.status] || alert.status}
                     </span>
                   </td>
-                  <td className="reason-cell">{alert.reason}</td>
                   <td className="actions-cell">
                     <button
                       className="btn ghost small"
@@ -378,6 +261,8 @@ function FraudPage() {
                       Borrar
                     </button>
                   </td>
+                  <td className="reason-cell">{alert.reason}</td>
+                  <td>{formatDate(alert.transactionDate)}</td>
                 </tr>
               ))}
             </tbody>
