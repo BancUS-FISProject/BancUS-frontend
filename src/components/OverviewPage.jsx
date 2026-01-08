@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { accountsApi, authApi, transfersApi, cardsApi } from "../api";
+import { accountsApi, authApi, transfersApi, cardsApi, API_BASE } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -83,35 +83,35 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
     }
   });
 
-const [account, setAccount] = useState(null);
-const [accountLoading, setAccountLoading] = useState(false);
-const [accountError, setAccountError] = useState("");
+  const [account, setAccount] = useState(null);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountError, setAccountError] = useState("");
 
-const [userCards, setUserCards] = useState([]);
-const [cardsLoading, setCardsLoading] = useState(false);
-const [cardsError, setCardsError] = useState("");
+  const [userCards, setUserCards] = useState([]);
+  const [cardsLoading, setCardsLoading] = useState(false);
+  const [cardsError, setCardsError] = useState("");
 
-const maskPan = (pan) => {
-  if (!pan) return "PAN no disponible";
-  const digits = String(pan).replace(/\s+/g, "");
-  const last4 = digits.slice(-4);
-  return `**** **** **** ${last4}`;
-};
+  const maskPan = (pan) => {
+    if (!pan) return "PAN no disponible";
+    const digits = String(pan).replace(/\s+/g, "");
+    const last4 = digits.slice(-4);
+    return `**** **** **** ${last4}`;
+  };
 
 
   const persistUserInfo = (info) => {
-  setUserInfo(info);
+    setUserInfo(info);
 
-  if (typeof localStorage === "undefined") return;
+    if (typeof localStorage === "undefined") return;
 
-  if (info) {
-    localStorage.setItem("authUser", JSON.stringify(info));
-    if (info.iban) localStorage.setItem("userIban", info.iban);
-  } else {
-    localStorage.removeItem("authUser");
-    localStorage.removeItem("userIban");
-  }
-};
+    if (info) {
+      localStorage.setItem("authUser", JSON.stringify(info));
+      if (info.iban) localStorage.setItem("userIban", info.iban);
+    } else {
+      localStorage.removeItem("authUser");
+      localStorage.removeItem("userIban");
+    }
+  };
 
 
   const handleInputChange = (e) => {
@@ -140,64 +140,64 @@ const maskPan = (pan) => {
     setRegisterForm((prev) => ({ ...prev, captchaToken: "" }));
   }, [mode]);
 
-useEffect(() => {
-  if (!isLoggedIn) return;
+  useEffect(() => {
+    if (!isLoggedIn) return;
 
-  const userIban =
-    userInfo?.iban ||
-    (typeof localStorage !== "undefined" ? localStorage.getItem("userIban") : "");
+    const userIban =
+      userInfo?.iban ||
+      (typeof localStorage !== "undefined" ? localStorage.getItem("userIban") : "");
 
-  if (!userIban) {
-    setAccount(null);
-    setUserCards([]);
-    setAccountError("No se encontró el IBAN del usuario para cargar el resumen.");
-    return;
-  }
-
-  let cancelled = false;
-
-  (async () => {
-    try {
-      setAccountError("");
-      setCardsError("");
-      setAccountLoading(true);
-      setCardsLoading(true);
-
-      // Igual que AccountsPage: la cuenta viene del microservicio accounts (con JWT)
-      const acc = await accountsApi.getByIban(userIban);
-
-      if (cancelled) return;
-
-      setAccount(acc || null);
-
-      // IMPORTANTE: aquí está el “igual que AccountsPage”
-      // Normalmente la cuenta trae las tarjetas en una propiedad tipo "cards".
-      const cardsFromAccount =
-        acc?.cards || acc?.tarjetas || acc?.cardList || acc?.cardsList || [];
-
-      setUserCards(Array.isArray(cardsFromAccount) ? cardsFromAccount : []);
-    } catch (e) {
-      if (cancelled) return;
+    if (!userIban) {
       setAccount(null);
       setUserCards([]);
-
-      // Si aquí sale Unauthorized, ya es 100% que el JWT no está llegando:
-      // arreglar onLogin (await) o el interceptor/global header.
-      const msg = e?.message || "Error cargando la cuenta.";
-      setAccountError(msg);
-      setCardsError(msg);
-    } finally {
-      if (!cancelled) {
-        setAccountLoading(false);
-        setCardsLoading(false);
-      }
+      setAccountError("No se encontró el IBAN del usuario para cargar el resumen.");
+      return;
     }
-  })();
 
-  return () => {
-    cancelled = true;
-  };
-}, [isLoggedIn, userInfo?.iban]);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setAccountError("");
+        setCardsError("");
+        setAccountLoading(true);
+        setCardsLoading(true);
+
+        // Igual que AccountsPage: la cuenta viene del microservicio accounts (con JWT)
+        const acc = await accountsApi.getByIban(userIban);
+
+        if (cancelled) return;
+
+        setAccount(acc || null);
+
+        // IMPORTANTE: aquí está el “igual que AccountsPage”
+        // Normalmente la cuenta trae las tarjetas en una propiedad tipo "cards".
+        const cardsFromAccount =
+          acc?.cards || acc?.tarjetas || acc?.cardList || acc?.cardsList || [];
+
+        setUserCards(Array.isArray(cardsFromAccount) ? cardsFromAccount : []);
+      } catch (e) {
+        if (cancelled) return;
+        setAccount(null);
+        setUserCards([]);
+
+        // Si aquí sale Unauthorized, ya es 100% que el JWT no está llegando:
+        // arreglar onLogin (await) o el interceptor/global header.
+        const msg = e?.message || "Error cargando la cuenta.";
+        setAccountError(msg);
+        setCardsError(msg);
+      } finally {
+        if (!cancelled) {
+          setAccountLoading(false);
+          setCardsLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, userInfo?.iban]);
 
 
 
@@ -326,6 +326,79 @@ useEffect(() => {
 
   const [recentTransfers, setRecentTransfers] = useState([]);
   const [loadingTransfers, setLoadingTransfers] = useState(false);
+  const [saldo, setSaldo] = useState("Cargando...");
+
+  // Helpers para resumen de extractos
+  const getRegistrationDate = () => {
+    if (!userInfo) return null;
+    return (
+      userInfo.createdAt || userInfo.registeredAt || userInfo.registrationDate || null
+    );
+  };
+
+  const monthsBetween = (from, to = new Date()) => {
+    try {
+      const d1 = new Date(from);
+      const d2 = new Date(to);
+      let months = (d2.getFullYear() - d1.getFullYear()) * 12;
+      months += d2.getMonth() - d1.getMonth();
+      return Math.max(0, months || 0);
+    } catch {
+      return null;
+    }
+  };
+
+  const registrationDate = getRegistrationDate();
+  const monthsAsClient = registrationDate ? monthsBetween(registrationDate) : null;
+
+  // statementsCount: preferimos contar los meses disponibles desde el microservicio
+  const [statementsCount, setStatementsCount] = useState(() =>
+    typeof userInfo?.statementsCount === "number" ? userInfo.statementsCount : monthsAsClient || 0
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMonths = async () => {
+      if (!isLoggedIn || !iban || iban === "No se ha podido obtener el iban") return;
+      try {
+        const res = await fetch(`${API_BASE}/bankstatements/by-iban/${encodeURIComponent(iban)}`);
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const json = await res.json();
+        const m = Array.isArray(json.months) ? json.months : [];
+        if (mounted) setStatementsCount(m.length);
+      } catch (e) {
+        // mantener el valor actual si hay error
+        console.error('Error cargando meses para statementsCount', e);
+      }
+    };
+    loadMonths();
+    return () => (mounted = false);
+  }, [isLoggedIn, iban]);
+
+  const formatMonthYear = (d) => {
+    try {
+      const date = new Date(d);
+      return date.toLocaleString(undefined, { month: "long", year: "numeric" });
+    } catch {
+      return "";
+    }
+  };
+
+  useEffect(() => {
+    const fetchSaldo = async () => {
+      if (isLoggedIn && iban && iban !== "No disponible") {
+        try {
+          const data = await accountsApi.getByIban(iban);
+          setSaldo(data.balance + " $");
+        } catch (error) {
+          console.error("Error obteniendo saldo:", error);
+          setSaldo("Error");
+        }
+      }
+    };
+
+    fetchSaldo();
+  }, [isLoggedIn, iban]);
 
   useEffect(() => {
     if (isLoggedIn && userInfo?.iban) {
@@ -347,10 +420,6 @@ useEffect(() => {
       setLoadingTransfers(false);
     }
   };
-
-  const [saldo, setSaldo] = useState("Cargando...");
-
-
 
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -607,74 +676,74 @@ useEffect(() => {
 
           {/* Resumen de cuenta */}
           <ScrollSection
-  id="account"
-  title="Resumen de la cuenta"
-  subtitle="Saldo e información básica de tu cuenta principal."
->
-  {accountLoading ? (
-    <p className="muted">Cargando cuenta…</p>
-  ) : accountError ? (
-    <p className="error-message">{accountError}</p>
-  ) : account ? (
-    <div className="two-cols">
-      <div>
-        <p className="label">Saldo disponible</p>
-        <p className="big-number">
-          € {Number(account.balance ?? account.availableBalance ?? 0).toFixed(2)}
-        </p>
-        <p className="muted">{account.currency || "EUR"}</p>
-      </div>
-      <div>
-        <p className="label">IBAN</p>
-        <p>{account.iban || userInfo?.iban || localStorage.getItem("userIban")}</p>
-        <p className="muted">{account.accountType || "Cuenta corriente · Uso diario"}</p>
-      </div>
-    </div>
-  ) : (
-    <p className="muted">No se encontraron datos de cuenta.</p>
-  )}
+            id="account"
+            title="Resumen de la cuenta"
+            subtitle="Saldo e información básica de tu cuenta principal."
+          >
+            {accountLoading ? (
+              <p className="muted">Cargando cuenta…</p>
+            ) : accountError ? (
+              <p className="error-message">{accountError}</p>
+            ) : account ? (
+              <div className="two-cols">
+                <div>
+                  <p className="label">Saldo disponible</p>
+                  <p className="big-number">
+                    € {Number(account.balance ?? account.availableBalance ?? 0).toFixed(2)}
+                  </p>
+                  <p className="muted">{account.currency || "EUR"}</p>
+                </div>
+                <div>
+                  <p className="label">IBAN</p>
+                  <p>{account.iban || userInfo?.iban || localStorage.getItem("userIban")}</p>
+                  <p className="muted">{account.accountType || "Cuenta corriente · Uso diario"}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="muted">No se encontraron datos de cuenta.</p>
+            )}
 
-  <div style={{ marginTop: 16 }}>
-    <p className="label">Tus tarjetas</p>
+            <div style={{ marginTop: 16 }}>
+              <p className="label">Tus tarjetas</p>
 
-    {cardsLoading ? (
-      <p className="muted">Cargando tarjetas…</p>
-    ) : cardsError ? (
-      <p className="error-message">{cardsError}</p>
-    ) : userCards.length === 0 ? (
-      <p className="muted">No hay tarjetas asociadas a la cuenta.</p>
-    ) : (
-      <div className="list-block">
-        {userCards.slice(0, 5).map((c) => (
-          <div className="list-row" key={c.PAN || c._id}>
-            <span>
-              {maskPan(c.PAN)}{" "}
-              <span className="muted">
-                · {c.cardholderName || "Titular"} · {c.cardType || "Virtual"}
-              </span>
-            </span>
-            <span>
-              {String(c.cardFreeze || c.status || "")
-                .toLowerCase()
-                .includes("frozen")
-                ? "Congelada"
-                : "Activa"}
-            </span>
-          </div>
-        ))}
-      </div>
-    )}
+              {cardsLoading ? (
+                <p className="muted">Cargando tarjetas…</p>
+              ) : cardsError ? (
+                <p className="error-message">{cardsError}</p>
+              ) : userCards.length === 0 ? (
+                <p className="muted">No hay tarjetas asociadas a la cuenta.</p>
+              ) : (
+                <div className="list-block">
+                  {userCards.slice(0, 5).map((c) => (
+                    <div className="list-row" key={c.PAN || c._id}>
+                      <span>
+                        {maskPan(c.PAN)}{" "}
+                        <span className="muted">
+                          · {c.cardholderName || "Titular"} · {c.cardType || "Virtual"}
+                        </span>
+                      </span>
+                      <span>
+                        {String(c.cardFreeze || c.status || "")
+                          .toLowerCase()
+                          .includes("frozen")
+                          ? "Congelada"
+                          : "Activa"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-    <button
-      type="button"
-      className="btn-secondary"
-      style={{ marginTop: 12 }}
-      onClick={() => navigate("/cards")}
-    >
-      Ver todas las tarjetas
-    </button>
-  </div>
-</ScrollSection>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ marginTop: 12 }}
+                onClick={() => navigate("/cards")}
+              >
+                Ver todas las tarjetas
+              </button>
+            </div>
+          </ScrollSection>
 
 
 
@@ -801,15 +870,36 @@ useEffect(() => {
               </div>
             )}
 
-            <div style={{ marginTop: "1rem" }}>
-              <button
-                className="link-button"
-                onClick={() => navigate("/notifications")}
-                style={{ fontSize: "0.9rem" }}
-              >
-                Ver todas las notificaciones →
-              </button>
-            </div>
+          </ScrollSection>
+
+          <ScrollSection
+            id="statements"
+            title="Historial de extractos"
+            subtitle="Historial de estados de Cuenta"
+          >
+            <ul className="statements-list">
+              <li>
+                <p>
+
+                  {registrationDate ? (
+                    <>
+                      Extractos mensuales desde {formatMonthYear(registrationDate)} hasta {formatMonthYear(new Date())}.
+                    </>
+                  ) : (
+                    "Extractos mensuales: Se muestran los meses disponibles."
+                  )}
+                </p>
+                <p>
+                  {monthsAsClient !== null && (
+                    <>Eres cliente desde hace {monthsAsClient} mes(es) con nosotros. </>
+                  )}
+                  <strong>Has recibido {statementsCount} extracto(s)</strong> hasta la fecha.
+                </p>
+                <p className="muted small">
+                  Puedes descargar cada extracto desde la vista Historial.
+                </p>
+              </li>
+            </ul>
           </ScrollSection>
         </>
       )}
