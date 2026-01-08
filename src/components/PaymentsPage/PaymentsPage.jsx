@@ -40,19 +40,7 @@ function PaymentsPage() {
       try {
         const response = await schedulerApi.getTransferByAccount(accountId)
 
-        if (response.status === 404) {
-          setError("La cuenta no existe")
-          return
-        }
-
-        if (!response.ok) {
-          const txt = await response.text().catch(() => "")
-          setError(`Error obteniendo los pagos (${response.status}). ${txt}`)
-          return
-        }
-
-        const data = await response.json()
-        setPayments(Array.isArray(data) ? data : [])
+        setPayments(Array.isArray(response) ? response : [])
       } catch {
         setError("No se pudo conectar con el backend")
       } finally {
@@ -178,13 +166,8 @@ function PaymentsPage() {
 
     setSubmitting(true)
     try {
-      const resp = await schedulerApi.postSchedulerTransfer(payload)
-
-      if (!resp.ok) {
-        const txt = await resp.text().catch(() => "")
-        setFormError(`Error creando el pago (${resp.status}). ${txt}`)
-        return
-      }
+      
+      await schedulerApi.postSchedulerTransfer(payload)
 
       closeModal()
       await loadPayments()
@@ -203,12 +186,7 @@ function PaymentsPage() {
     if (!confirmed) return
 
     try {
-      const response = await schedulerApi.deleteSchedulerTransfer(paymentId)
-
-      if (!response.ok) {
-        const txt = await response.text().catch(() => "")
-        throw new Error(txt || "Error eliminando el pago")
-      }
+      await schedulerApi.deleteSchedulerTransfer(paymentId)
 
       setPayments((prev) => prev.filter((p) => p.id !== paymentId))
     } catch (err) {
