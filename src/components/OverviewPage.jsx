@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReCAPTCHA from "react-google-recaptcha";
-import { accountsApi, authApi } from "../api";
+import { accountsApi, authApi, API_BASE } from "../api";
 import ScrollSection from "./ScrollSection";
 import "../OverviewPage.css";
 import { useNavigate } from "react-router-dom";
@@ -175,8 +175,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             phoneNumber: "No disponible",
             plan: "basico",
           });
-      }
-    } else {
+        }
+      } else {
         const payload = {
           name: registerForm.name,
           email: registerForm.email,
@@ -214,7 +214,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
         }
       }
     } catch (err) {
-        setFormError(formatError(err));
+      setFormError(formatError(err));
     } finally {
       setFormLoading(false);
       recaptchaRef.current?.reset();
@@ -241,14 +241,71 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
 
   const iban = userInfo?.iban || "No se ha podido obtener el iban"
 
-  const [saldo, setSaldo] = useState("Cargando..."); 
+  const [saldo, setSaldo] = useState("Cargando...");
+
+  // Helpers para resumen de extractos
+  const getRegistrationDate = () => {
+    if (!userInfo) return null;
+    return (
+      userInfo.createdAt || userInfo.registeredAt || userInfo.registrationDate || null
+    );
+  };
+
+  const monthsBetween = (from, to = new Date()) => {
+    try {
+      const d1 = new Date(from);
+      const d2 = new Date(to);
+      let months = (d2.getFullYear() - d1.getFullYear()) * 12;
+      months += d2.getMonth() - d1.getMonth();
+      return Math.max(0, months || 0);
+    } catch {
+      return null;
+    }
+  };
+
+  const registrationDate = getRegistrationDate();
+  const monthsAsClient = registrationDate ? monthsBetween(registrationDate) : null;
+
+  // statementsCount: preferimos contar los meses disponibles desde el microservicio
+  const [statementsCount, setStatementsCount] = useState(() =>
+    typeof userInfo?.statementsCount === "number" ? userInfo.statementsCount : monthsAsClient || 0
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    const loadMonths = async () => {
+      if (!isLoggedIn || !iban || iban === "No se ha podido obtener el iban") return;
+      try {
+        const res = await fetch(`${API_BASE}/bankstatements/by-iban/${encodeURIComponent(iban)}`);
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const json = await res.json();
+        const m = Array.isArray(json.months) ? json.months : [];
+        if (mounted) setStatementsCount(m.length);
+      } catch (e) {
+        // mantener el valor actual si hay error
+        console.error('Error cargando meses para statementsCount', e);
+      }
+    };
+    loadMonths();
+    return () => (mounted = false);
+  }, [isLoggedIn, iban]);
+
+  const formatMonthYear = (d) => {
+    try {
+      const date = new Date(d);
+      return date.toLocaleString(undefined, { month: "long", year: "numeric" });
+    } catch {
+      return "";
+    }
+  };
+
 
   useEffect(() => {
     const fetchSaldo = async () => {
       if (isLoggedIn && iban && iban !== "No disponible") {
         try {
           const data = await accountsApi.getByIban(iban);
-          setSaldo(data.balance + " $"); 
+          setSaldo(data.balance + " $");
         } catch (error) {
           console.error("Error obteniendo saldo:", error);
           setSaldo("Error");
@@ -398,8 +455,8 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
                   {formLoading
                     ? "Procesando..."
                     : mode === "login"
-                    ? "Iniciar sesión"
-                    : "Crear cuenta"}
+                      ? "Iniciar sesión"
+                      : "Crear cuenta"}
                 </button>
               </div>
             </form>
@@ -571,7 +628,7 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
             title="Pagos programados"
             subtitle="Cargos automáticos previstos."
           >
-            <OverviewPaymentsPage/>
+            <OverviewPaymentsPage />
           </ScrollSection>
 
           {/* Notificaciones */}
@@ -589,6 +646,36 @@ function OverviewPage({ isLoggedIn, onLogin, onLogout }) {
               Aquí iría el microservicio de notificaciones (
               <code>/notifications</code>).
             </p>
+          </ScrollSection>
+
+          <ScrollSection
+            id="statements"
+            title="Historial de extractos"
+            subtitle="Historial de estados de Cuenta"
+          >
+            <ul className="statements-list">
+              <li>
+                <p>
+
+                  {registrationDate ? (
+                    <>
+                      Extractos mensuales desde {formatMonthYear(registrationDate)} hasta {formatMonthYear(new Date())}.
+                    </>
+                  ) : (
+                    "Extractos mensuales: Se muestran los meses disponibles."
+                  )}
+                </p>
+                <p>
+                  {monthsAsClient !== null && (
+                    <>Eres cliente desde hace {monthsAsClient} mes(es) con nosotros. </>
+                  )}
+                  <strong>Has recibido {statementsCount} extracto(s)</strong> hasta la fecha.
+                </p>
+                <p className="muted small">
+                  Puedes descargar cada extracto desde la vista Historial.
+                </p>
+              </li>
+            </ul>
           </ScrollSection>
         </>
       )}

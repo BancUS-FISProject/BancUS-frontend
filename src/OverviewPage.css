@@ -41,7 +41,7 @@
 
 .login-panel {
   max-width: 100%;
-  margin: 0 0 2.5rem 0; 
+  margin: 0 0 2.5rem 0;
   background: #ffffff;
   border-radius: 18px;
   padding: 2rem 2.1rem;
@@ -283,7 +283,8 @@
 
 .two-cols,
 .list-block,
-.notifications-list {
+.notifications-list,
+.statements-list {
   background: #ffffff;
   border-radius: 18px;
   padding: 1.6rem 1.8rem;
@@ -329,7 +330,7 @@
   color: #111827;
 }
 
-.list-row + .list-row {
+.list-row+.list-row {
   border-top: 1px dashed #e5e7eb;
   padding-top: 0.7rem;
 }
@@ -360,6 +361,29 @@
 }
 
 .notifications-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #4f46e5;
+}
+
+/* Estilos para la lista de extractos: repetir apariencia de notificaciones */
+.statements-list {
+  list-style: none;
+  margin: 0;
+  padding: 1.3rem 1.6rem;
+}
+
+.statements-list li {
+  position: relative;
+  padding-left: 1.1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.statements-list li::before {
   content: "•";
   position: absolute;
   left: 0;

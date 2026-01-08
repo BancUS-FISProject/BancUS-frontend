@@ -19,6 +19,7 @@ function StatementsPage() {
     });
 
     const iban = userInfo?.iban || "No se ha podido obtener el iban"
+    //const iban = "ES1111111111111111111111"; // valor fijo para pruebas
     const accountNumber = iban;
     const [accounts, setAccounts] = useState([]);
 
@@ -69,9 +70,38 @@ function StatementsPage() {
         const load = async () => {
             try {
                 setListStatus("Cargando meses...");
-                const res = await fetch(`${API_BASE}/bankstatements/by-iban/${accountNumber}`);
+
+                // Obtener token para la petición autenticada
+                const token = localStorage.getItem('authToken');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+
+                console.log('[StatementsPage] Cargando meses para IBAN:', accountNumber);
+                const res = await fetch(`${API_BASE}/bankstatements/by-iban/${accountNumber}`, {
+                    headers
+                });
+
+                console.log('[StatementsPage] Response status:', res.status);
+
+                // Si no hay estados de cuenta (404), es normal, no es un error
+                if (res.status === 404) {
+                    if (mounted) {
+                        setMonths([]);
+                        setSelectedMonthId("");
+                        setSelectedMonthLabel("");
+                        setListStatus("No hay estados de cuenta disponibles para esta cuenta aún.");
+                    }
+                    return;
+                }
+
                 if (!res.ok) throw new Error(`status ${res.status}`);
+
                 const json = await res.json();
+                console.log('[StatementsPage] Meses recibidos:', json);
                 const m = Array.isArray(json.months) ? json.months : [];
                 if (mounted) {
                     setMonths(m);
@@ -79,21 +109,21 @@ function StatementsPage() {
                     if (m.length > 0) {
                         setSelectedMonthId(m[0].Id);
                         setSelectedMonthLabel(m[0].month_name);
+                        setListStatus("");
                     } else {
                         setSelectedMonthId("");
                         setSelectedMonthLabel("");
+                        setListStatus("No hay estados de cuenta disponibles.");
                     }
-                    setListStatus("");
                 }
-                console.log(res);
             } catch (e) {
                 console.error('StatementsPage.load months error', e);
-                if (mounted) setListStatus('Error cargando meses');
+                if (mounted) setListStatus('Error de conexión al cargar los meses. Inténtalo de nuevo.');
             }
         };
         load();
         return () => (mounted = false);
-    }, [selectedAccount]);
+    }, [selectedAccount, accountNumber]);
 
     // fetch statement detail when a month (Id) is selected
     useEffect(() => {
@@ -109,8 +139,24 @@ function StatementsPage() {
             try {
                 setDetailStatus('Cargando detalle...');
                 setLoadingTransactions(true);
-                const res = await fetch(`${API_BASE}/bankstatements/${selectedMonthId}`);
+
+                // Obtener token para la petición autenticada
+                const token = localStorage.getItem('authToken');
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                if (token) {
+                    headers.Authorization = `Bearer ${token}`;
+                }
+
+                console.log('[StatementsPage] Cargando detalle del statement ID:', selectedMonthId);
+                const res = await fetch(`${API_BASE}/bankstatements/${selectedMonthId}`, {
+                    headers
+                });
+
+                console.log('[StatementsPage] Response status detalle:', res.status);
                 if (!res.ok) throw new Error(`status ${res.status}`);
+
                 const json = await res.json();
                 console.log('Detalle del estado de cuenta:', json);
                 console.log('Fechas:', {
@@ -213,18 +259,78 @@ function StatementsPage() {
 
     const handleGenerateByIban = async () => {
         if (!graphIban) return setGraphStatus("Ingresa el IBAN");
-        if (!graphMonthYear) return setGraphStatus("Selecciona mes y año");
 
-        setGraphStatus("Generando estado...");
+        // Usar el mes actual para simular el estado del mes en curso
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const currentMonth = `${year}-${month}`; // formato YYYY-MM
+
+        // guardar para mostrar el período usado
+        setGraphMonthYear(currentMonth);
+
+        setGraphStatus("Generando estado de cuenta del mes actual...");
 
         try {
-            const res = await fetch(`${API_BASE}/bankstatements/by-iban?iban=${encodeURIComponent(graphIban)}&month=${graphMonthYear}`);
-            if (!res.ok) throw new Error(`status ${res.status}`);
-            const json = await res.json();
+            // Obtener el token JWT del localStorage (la clave correcta es 'authToken')
+            const token = localStorage.getItem('authToken');
 
-            console.log('Respuesta de by-iban:', json);
-            setGraphResult(json);
-            setGraphStatus("Estado generado correctamente");
+            console.log('[Frontend] Token encontrado:', !!token);
+            if (!token) {
+                setGraphStatus("Error: No se encontró token de autenticación. Por favor, inicia sesión nuevamente.");
+                return;
+            }
+
+            // Llamar al endpoint POST /generate-current con el IBAN en el body
+            const res = await fetch(`${API_BASE}/bankstatements/generate-current`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ iban: graphIban })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+
+                // Manejo específico de errores conocidos
+                if (res.status === 404 && errorData.error === 'no_transactions_found') {
+                    setGraphStatus("No se encontraron transacciones del mes actual. Realiza alguna operación primero.");
+                    setGraphResult(null);
+                    return;
+                }
+
+                if (res.status === 502 && errorData.error === 'error_fetching_transactions') {
+                    setGraphStatus("Error: No se pudo conectar con el servicio de transacciones.");
+                    setGraphResult(null);
+                    return;
+                }
+
+                throw new Error(errorData.message || `HTTP ${res.status}`);
+            }
+
+            const json = await res.json();
+            console.log('Respuesta de generate-current:', json);
+
+            // Adaptar la respuesta al formato esperado por el componente
+            const statement = json.statement;
+            if (statement) {
+                setGraphResult({
+                    iban: statement.account?.iban || graphIban,
+                    total_incoming: statement.total_incoming || 0,
+                    total_outgoing: statement.total_outgoing || 0,
+                    detail: statement
+                });
+
+                if (json.existing) {
+                    setGraphStatus("Estado de cuenta ya existente (mes actual)");
+                } else if (json.created) {
+                    setGraphStatus("Estado de cuenta generado exitosamente");
+                }
+            } else {
+                setGraphStatus(json.message || "Estado generado");
+            }
         } catch (e) {
             console.error('Error generando estado:', e);
             setGraphStatus(`Error: ${e.message}`);
@@ -301,6 +407,220 @@ function StatementsPage() {
         return `${day}/${month}/${year}`;
     };
 
+    // Función para generar y descargar el PDF usando window.print()
+    const handleDownloadPDF = () => {
+        if (!statementDetail || !selectedMonthLabel) {
+            alert('No hay datos para descargar');
+            return;
+        }
+
+        const period = getMonthPeriod();
+        const transactions = statementDetail.detail?.transactions || [];
+
+        // Crear contenido HTML para imprimir
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Estado de Cuenta - ${selectedMonthLabel}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 40px;
+                        color: #333;
+                    }
+                    h1 {
+                        color: #2c3e50;
+                        border-bottom: 3px solid #3498db;
+                        padding-bottom: 10px;
+                        margin-bottom: 30px;
+                    }
+                    .info-section {
+                        margin: 20px 0;
+                        padding: 15px;
+                        background-color: #f8f9fa;
+                        border-left: 4px solid #3498db;
+                    }
+                    .info-row {
+                        margin: 8px 0;
+                        display: flex;
+                    }
+                    .info-label {
+                        font-weight: bold;
+                        min-width: 120px;
+                        color: #555;
+                    }
+                    .info-value {
+                        color: #222;
+                    }
+                    h2 {
+                        color: #2c3e50;
+                        margin-top: 30px;
+                        margin-bottom: 15px;
+                        border-bottom: 2px solid #ecf0f1;
+                        padding-bottom: 5px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 15px;
+                    }
+                    th {
+                        background-color: #3498db;
+                        color: white;
+                        padding: 12px;
+                        text-align: left;
+                        font-weight: bold;
+                    }
+                    td {
+                        padding: 10px;
+                        border-bottom: 1px solid #ecf0f1;
+                    }
+                    tr:nth-child(even) {
+                        background-color: #f8f9fa;
+                    }
+                    tr:hover {
+                        background-color: #e8f4f8;
+                    }
+                    .amount-positive {
+                        color: #27ae60;
+                        font-weight: bold;
+                    }
+                    .amount-negative {
+                        color: #e74c3c;
+                        font-weight: bold;
+                    }
+                    .totals {
+                        margin-top: 20px;
+                        padding: 15px;
+                        background-color: #ecf0f1;
+                        border-radius: 5px;
+                    }
+                    .total-row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 5px 0;
+                        font-size: 16px;
+                    }
+                    .total-label {
+                        font-weight: bold;
+                    }
+                    .footer {
+                        margin-top: 40px;
+                        text-align: center;
+                        color: #7f8c8d;
+                        font-size: 12px;
+                        border-top: 1px solid #ecf0f1;
+                        padding-top: 15px;
+                    }
+                    @media print {
+                        body { margin: 20px; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Estado de Cuenta Mes ${selectedMonthLabel}</h1>
+                
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">ID:</span>
+                        <span class="info-value">${statementDetail.id || statementDetail.detail?._id || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IBAN:</span>
+                        <span class="info-value">${statementDetail.detail?.account?.iban || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Nombre:</span>
+                        <span class="info-value">${statementDetail.detail?.account?.name || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value">${statementDetail.detail?.account?.email || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Periodo:</span>
+                        <span class="info-value">${period.start} — ${period.end}</span>
+                    </div>
+                </div>
+
+                <div class="totals">
+                    <div class="total-row">
+                        <span class="total-label">Total Ingresos:</span>
+                        <span class="amount-positive">${(statementDetail.detail?.total_incoming ?? 0).toFixed(2)} €</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label">Total Egresos:</span>
+                        <span class="amount-negative">${(statementDetail.detail?.total_outgoing ?? 0).toFixed(2)} €</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="total-label">Balance:</span>
+                        <span style="font-weight: bold; font-size: 18px;">
+                            ${((statementDetail.detail?.total_incoming ?? 0) - (statementDetail.detail?.total_outgoing ?? 0)).toFixed(2)} €
+                        </span>
+                    </div>
+                </div>
+
+                <h2>Transacciones (${transactions.length})</h2>
+                ${transactions.length > 0 ? `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Monto</th>
+                                <th>Moneda</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${transactions.map((t, i) => {
+            const fecha = t.date ? new Date(t.date).toLocaleString() : 'N/A';
+            const desc = t.description || 'Sin descripción';
+            const amount = Number(t.amount) || 0;
+            const amountClass = amount >= 0 ? 'amount-positive' : 'amount-negative';
+            const amountFormatted = amount >= 0 ? `+${amount.toFixed(2)}` : amount.toFixed(2);
+
+            return `
+                                    <tr>
+                                        <td>${i + 1}</td>
+                                        <td>${fecha}</td>
+                                        <td>${desc}</td>
+                                        <td class="${amountClass}">${amountFormatted}</td>
+                                        <td>${t.currency || 'EUR'}</td>
+                                    </tr>
+                                `;
+        }).join('')}
+                        </tbody>
+                    </table>
+                ` : '<p>No hay transacciones disponibles</p>'}
+
+                <div class="footer">
+                    <p>BancUS - Estado de cuenta generado el ${new Date().toLocaleDateString()}</p>
+                    <p>Este documento es válido como comprobante de transacciones</p>
+                </div>
+            </body>
+            </html>
+        `;
+
+        // Abrir ventana de impresión
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            printWindow.focus();
+
+            // Esperar a que cargue y luego imprimir
+            printWindow.onload = () => {
+                printWindow.print();
+            };
+        } else {
+            alert('Por favor, permite las ventanas emergentes para descargar el PDF');
+        }
+    };
+
     // Calcular periodo basado en el label del mes
     const getMonthPeriod = () => {
         if (!selectedMonthLabel || !statementDetail?.detail?.date_start) return { start: '', end: '' };
@@ -344,6 +664,96 @@ function StatementsPage() {
             </header>
 
             <section className="statements-grid" aria-label="Panel de estados de cuenta">
+                <div className="stat-section" id="generate-state-section">
+                    <h2>Simular estado de cuenta actual</h2>
+                    <p className="muted">Simula tu estado de cuenta del mes actual con las transacciones realizadas hasta hoy.</p>
+
+                    <div className="graph-inputs">
+                        <div className="input-group">
+                            <label htmlFor="graph-iban">IBAN</label>
+                            <input
+                                id="graph-iban"
+                                type="text"
+                                className="input"
+                                value={graphIban}
+                                onChange={(e) => setGraphIban(e.target.value)}
+                                placeholder="ES00 0000 0000 0000 0000 0000"
+                            />
+                        </div>
+
+                        <div className="input-group">
+                            <label htmlFor="graph-date">Fecha (fija)</label>
+                            <input
+                                id="graph-date"
+                                type="date"
+                                className="input"
+                                value={new Date().toISOString().slice(0, 10)}
+                                disabled
+                                aria-readonly="true"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="generate-controls">
+                        <button className="btn btn-secondary" onClick={handleGenerateByIban} aria-label="Simular estado">
+                            Simular
+                        </button>
+                        {graphStatus && (
+                            <span className={`status-inline ${graphStatus.toLowerCase().includes('error') ? 'status-error' : 'status-success'}`} role="status" aria-live="polite">
+                                {graphStatus}
+                            </span>
+                        )}
+                    </div>
+
+                    {graphResult && (
+                        <div className="result-card">
+                            <h3>Resultado del estado de cuenta</h3>
+                            <div className="result-details">
+                                <p><strong>IBAN:</strong> {graphResult.iban || graphIban}</p>
+                                <p><strong>Período:</strong> {graphMonthYear}</p>
+                                <p><strong>Total Ingresos:</strong> {graphResult.total_incoming || 0} €</p>
+                                <p><strong>Total Egresos:</strong> {graphResult.total_outgoing || 0} €</p>
+                                <p><strong>Balance:</strong> {((graphResult.total_incoming || 0) - (graphResult.total_outgoing || 0)).toFixed(2)} €</p>
+
+                                {graphResult.detail && graphResult.detail.transactions && graphResult.detail.transactions.length > 0 && (
+                                    <div>
+                                        <h4>Transacciones del mes ({graphResult.detail.transactions.length})</h4>
+                                        <div className="tx-table-wrapper">
+                                            <table className="tx-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Fecha</th>
+                                                        <th>Descripción</th>
+                                                        <th>Monto</th>
+                                                        <th>Moneda</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {graphResult.detail.transactions.slice(0, 10).map((t, i) => (
+                                                        <tr key={i}>
+                                                            <td>{t.date ? new Date(t.date).toLocaleString() : ''}</td>
+                                                            <td>{t.description || 'Sin descripción'}</td>
+                                                            <td className={t.amount >= 0 ? 'positive' : 'negative'}>
+                                                                {t.amount >= 0 ? '+' : ''}{t.amount.toFixed(2)}
+                                                            </td>
+                                                            <td>{t.currency}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            {graphResult.detail.transactions.length > 10 && (
+                                                <p className="muted">
+                                                    Mostrando 10 de {graphResult.detail.transactions.length} transacciones
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* 1) Listar cuentas y meses disponibles */}
                 <div className="stat-section" id="list-section">
                     <h2>Seleccionar cuenta y mes</h2>
@@ -409,7 +819,7 @@ function StatementsPage() {
                             <div className="detail-card-body">
                                 <div className="detail-card-header">
                                     <h3 className="detail-card-title">Detalle de estado</h3>
-                                    <button className="btn btn-download" onClick={() => alert('Descargando estado de cuenta...')} aria-label="Descargar estado">
+                                    <button className="btn btn-download" onClick={handleDownloadPDF} aria-label="Descargar estado">
                                         ↓ Descargar
                                     </button>
                                 </div>
@@ -593,68 +1003,7 @@ function StatementsPage() {
                         )}
                     </div>
                 </div>
-                <div className="stat-section" id="generate-state-section">
-                    <h2>Generar Estado</h2>
-                    <p className="muted">Genera un estado de cuenta por IBAN y período.</p>
-                    
-                    <div className="graph-inputs">
-                        <div className="input-group">
-                            <label htmlFor="graph-iban">IBAN</label>
-                            <input
-                                id="graph-iban"
-                                type="text"
-                                className="input"
-                                value={graphIban}
-                                onChange={(e) => setGraphIban(e.target.value)}
-                                placeholder="ES00 0000 0000 0000 0000 0000"
-                            />
-                        </div>
 
-                        <div className="input-group">
-                            <label htmlFor="graph-month">Mes y Año (YYYY-MM)</label>
-                            <input
-                                id="graph-month"
-                                type="month"
-                                className="input"
-                                value={graphMonthYear}
-                                onChange={(e) => setGraphMonthYear(e.target.value)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="generate-controls">
-                        <button className="btn btn-secondary" onClick={handleGenerateByIban} aria-label="Generar estado">
-                            Generar Estado
-                        </button>
-                        {graphStatus && (
-                            <span className={`status-inline ${graphStatus.toLowerCase().includes('error') ? 'status-error' : 'status-success'}`} role="status" aria-live="polite">
-                                {graphStatus}
-                            </span>
-                        )}
-                    </div>
-
-                    {graphResult && (
-                        <div className="result-card">
-                            <h3>Resultado</h3>
-                            <div className="result-details">
-                                <p><strong>IBAN:</strong> {graphResult.iban || graphIban}</p>
-                                <p><strong>Período:</strong> {graphMonthYear}</p>
-                                <p><strong>Total Ingresos:</strong> {graphResult.total_incoming || 0} €</p>
-                                <p><strong>Total Egresos:</strong> {graphResult.total_outgoing || 0} €</p>
-                                {graphResult.months && graphResult.months.length > 0 && (
-                                    <div>
-                                        <h4>Meses disponibles:</h4>
-                                        <ul>
-                                            {graphResult.months.map((m, idx) => (
-                                                <li key={idx}>{m.month_name} - ID: {m.Id}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </div>
                 {/* 2) Actualizar datos (nombre del estado) */}
                 {/* <div className="stat-section" id="update-section">
                     <h2>Actualizar datos</h2>
