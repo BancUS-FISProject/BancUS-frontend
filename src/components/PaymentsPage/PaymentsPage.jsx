@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { getAccountIdFromLocalStorage, getAuthToken, prettifyDaysOfWeek, DAY_ES } from "./utils"
+import { getAccountIdFromLocalStorage, getAuthToken, prettifyDaysOfWeek, DAY_ES, formatLocalDateTimeES } from "./utils"
 
 function PaymentsPage() {
   const [payments, setPayments] = useState([])
@@ -357,7 +357,7 @@ function PaymentsPage() {
 
                   const onceExec =
                     freqRaw === "ONCE" && sched.executionDate
-                      ? new Date(sched.executionDate).toLocaleString()
+                      ? formatLocalDateTimeES(sched.executionDate)
                       : "-"
 
                   const amount =
