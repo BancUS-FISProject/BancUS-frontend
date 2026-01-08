@@ -287,4 +287,19 @@ export const healthApi = {
   cache: () => apiRequest("/ping/cache"),
 };
 
+// Endpoints para Pagos Programados
+export const schedulerApi = {
+  getUpcomingTransfer: (accountId) => apiRequest(`/scheduled-payments/accounts/${accountId}/upcoming?limit=2`),
+  getTransferByAccount: (accountId) => apiRequest(`/scheduled-payments/accounts/${accountId}`),
+  postSchedulerTransfer: (payload) =>
+    apiRequest("/scheduled-payments/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  deleteSchedulerTransfer: (paymentId) =>
+    apiRequest(`/scheduled-payments/${paymentId}`, {
+      method: "DELETE",
+    }),
+};
+
 export { API_BASE, getStoredToken };
