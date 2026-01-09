@@ -6,7 +6,6 @@ const API_BASE = "https://68.221.252.242:10000/v1";
 
 
 function StatementsPage() {
-    // cuenta de prueba (usar como id en el endpoint)
 
     const [userInfo, setUserInfo] = useState(() => {
         if (typeof localStorage === "undefined") return null;
@@ -204,6 +203,7 @@ function StatementsPage() {
     const [graphMonthYear, setGraphMonthYear] = useState("");
     const [graphResult, setGraphResult] = useState(null);
     const [graphStatus, setGraphStatus] = useState("");
+    const [deleteSimulationStatus, setDeleteSimulationStatus] = useState("");
 
     const startEditing = () => {
         if (!selectedAccount || !selectedMonthId) return setUpdateStatus("Selecciona cuenta y mes");
@@ -323,10 +323,11 @@ function StatementsPage() {
                     detail: statement
                 });
 
-                if (json.existing) {
-                    setGraphStatus("Estado de cuenta ya existente (mes actual)");
-                } else if (json.created) {
+                // Solo mostrar mensaje de éxito cuando se crea un nuevo estado
+                if (json.created) {
                     setGraphStatus("Estado de cuenta generado exitosamente");
+                } else if (json.existing) {
+                    setGraphStatus("Estado de cuenta ya existente (mes actual)");
                 }
             } else {
                 setGraphStatus(json.message || "Estado generado");
@@ -334,6 +335,74 @@ function StatementsPage() {
         } catch (e) {
             console.error('Error generando estado:', e);
             setGraphStatus(`Error: ${e.message}`);
+        }
+    };
+
+    const handleDeleteSimulation = async () => {
+        if (!graphResult || !graphResult.detail) {
+            setDeleteSimulationStatus("No hay simulación para eliminar");
+            return;
+        }
+
+        // Obtener el ID del estado generado
+        const statementId = graphResult.detail._id || graphResult.detail.id;
+        if (!statementId) {
+            setDeleteSimulationStatus("Error: No se encontró el ID del estado");
+            return;
+        }
+
+        setDeleteSimulationStatus("Eliminando simulación...");
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (token) {
+                headers.Authorization = `Bearer ${token}`;
+            }
+
+            console.log('[StatementsPage] Eliminando simulación con ID:', statementId);
+            const res = await fetch(`${API_BASE}/bankstatements/${statementId}`, {
+                method: 'DELETE',
+                headers
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP ${res.status}`);
+            }
+
+            setDeleteSimulationStatus("Simulación eliminada exitosamente");
+            setGraphResult(null);
+            setGraphMonthYear("");
+            setGraphStatus("");
+
+            // Recargar la lista de meses
+            const loadRes = await fetch(`${API_BASE}/bankstatements/by-iban/${accountNumber}`, {
+                headers
+            });
+            if (loadRes.ok) {
+                const json = await loadRes.json();
+                const m = Array.isArray(json.months) ? json.months : [];
+                setMonths(m);
+
+                // Si hay meses disponibles, seleccionar el primero
+                if (m.length > 0) {
+                    setSelectedMonthId(m[0].Id);
+                    setSelectedMonthLabel(m[0].month_name);
+                } else {
+                    setSelectedMonthId("");
+                    setSelectedMonthLabel("");
+                    setStatementDetail(null);
+                }
+            }
+
+            // Limpiar mensaje después de 3 segundos
+            setTimeout(() => setDeleteSimulationStatus(""), 3000);
+        } catch (e) {
+            console.error('Error eliminando simulación:', e);
+            setDeleteSimulationStatus(`Error: ${e.message}`);
         }
     };
 
@@ -698,9 +767,19 @@ function StatementsPage() {
                         <button className="btn btn-secondary" onClick={handleGenerateByIban} aria-label="Simular estado">
                             Simular
                         </button>
+                        {graphResult && (
+                            <button className="btn btn-secondary" onClick={handleDeleteSimulation} aria-label="Eliminar simulación">
+                                Eliminar simulación
+                            </button>
+                        )}
                         {graphStatus && (
                             <span className={`status-inline ${graphStatus.toLowerCase().includes('error') ? 'status-error' : 'status-success'}`} role="status" aria-live="polite">
                                 {graphStatus}
+                            </span>
+                        )}
+                        {deleteSimulationStatus && (
+                            <span className={`status-inline ${deleteSimulationStatus.toLowerCase().includes('error') ? 'status-error' : 'status-success'}`} role="status" aria-live="polite">
+                                {deleteSimulationStatus}
                             </span>
                         )}
                     </div>
@@ -729,16 +808,20 @@ function StatementsPage() {
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    {graphResult.detail.transactions.slice(0, 10).map((t, i) => (
-                                                        <tr key={i}>
-                                                            <td>{t.date ? new Date(t.date).toLocaleString() : ''}</td>
-                                                            <td>{t.description || 'Sin descripción'}</td>
-                                                            <td className={t.amount >= 0 ? 'positive' : 'negative'}>
-                                                                {t.amount >= 0 ? '+' : ''}{t.amount.toFixed(2)}
-                                                            </td>
-                                                            <td>{t.currency}</td>
-                                                        </tr>
-                                                    ))}
+                                                    {graphResult.detail.transactions.slice(0, 10).map((t, i) => {
+                                                        const amount = Number(t.amount) || 0;
+                                                        const isNegative = amount < 0;
+                                                        return (
+                                                            <tr key={i}>
+                                                                <td>{t.date ? new Date(t.date).toLocaleString() : ''}</td>
+                                                                <td>{t.description || 'Sin descripción'}</td>
+                                                                <td className={isNegative ? 'negative' : 'positive'}>
+                                                                    {isNegative ? '' : '-'}{amount.toFixed(2)}
+                                                                </td>
+                                                                <td>{t.currency}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
                                                 </tbody>
                                             </table>
                                             {graphResult.detail.transactions.length > 10 && (
@@ -1003,78 +1086,10 @@ function StatementsPage() {
                         )}
                     </div>
                 </div>
-
-                {/* 2) Actualizar datos (nombre del estado) */}
-                {/* <div className="stat-section" id="update-section">
-                    <h2>Actualizar datos</h2>
-                    {!editingMode && (
-                        <button className="btn btn-outline" onClick={startEditing} aria-label="Mostrar editor de nombre">
-                            Actualizar nombre del estado
-                        </button>
-                    )}
-
-                    {editingMode && (
-                        <div className="edit-inline" role="group" aria-label="Editar nombre de estado">
-                            <label htmlFor="edit-name" className="visually-hidden">
-                                Nombre del estado de cuenta
-                            </label>
-                            <input
-                                id="edit-name"
-                                className="input"
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                placeholder="Nombre del estado de cuenta"
-                            />
-                            <button className="btn" onClick={saveEditing} aria-label="Guardar nombre">
-                                Guardar
-                            </button>
-                            <button className="btn btn-secondary" onClick={cancelEditing} aria-label="Cancelar edición">
-                                Cancelar
-                            </button>
-                        </div>
-                    )}
-                    {updateStatus && (
-                        <div className={`status ${updateStatus.toLowerCase().includes('error') ? 'status-error' : 'status-success'}`} role="status" aria-live="polite">
-                            {updateStatus}
-                        </div>
-                    )}
-                </div> */}
-
-                {/* 3) Borrar estado de cuenta */}
-                {/* <div className="stat-section" id="delete-section">
-                    <h2>Borrar estado</h2>
-                    <p className="muted">Elimina el estado seleccionado.</p>
-                    <div className="delete-input">
-                        <label htmlFor="delete-input">Nombre o código a eliminar</label>
-                        <input id="delete-input" className="input" value={deleteInput} onChange={(e) => setDeleteInput(e.target.value)} placeholder="Ej: Estado 2025-12" />
-                    </div>
-                    <div style={{ marginTop: '0.5rem' }}>
-                        <button className="btn btn-danger" onClick={handleDelete} aria-label="Borrar estado">
-                            Borrar estado
-                        </button>
-                    </div>
-
-                    {deleteConfirm && (
-                        <div className="confirm-inline" role="alert">
-                            <p>¿Confirmar borrado de "{deleteInput}"?</p>
-                            <button className="btn" onClick={confirmDelete}>Confirmar</button>
-                            <button className="btn btn-secondary" onClick={cancelDelete}>Cancelar</button>
-                        </div>
-                    )}
-
-                    {deleteStatus && (
-                        <div className={`status ${deleteStatus.toLowerCase().includes('error') ? 'status-error' : 'status-success'}`} role="status" aria-live="polite">
-                            {deleteStatus}
-                        </div>
-                    )}
-                </div> */}
-
-
             </section>
-
-            {/* Detalle ahora se muestra dentro de la primera sección (tarjeta interna) */}
         </main>
     );
 }
 
 export default StatementsPage;
+
