@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./StatementsPage.css";
 
 // NOTE: replaced mock data with real accountNumber and API call for months
-const API_BASE = "http://localhost:10000/v1";
+const API_BASE = "https://68.221.252.242:10000/v1";
 
 
 function StatementsPage() {
