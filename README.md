@@ -22,6 +22,7 @@ El proyecto se presenta con la arquitectura base y los microservicios totalmente
 * **Microservicio Anti-fraud:** Reglas de detección de fraude, creación/gestión de alertas y bloqueo proactivo de cuentas mediante circuit breaker hacia Accounts.
 * **Microservicio Scheduled Payments:** Funcionalidad completa, realiza transferencias en momentos programados utilizando una sincronización por NTP y algunas limitaciones tipo Rate Limit para asegurar un correcto funcionamiento.
 * **Microservicio Notifications:** Funcionalidad completa, se encarga de informar a los usuarios sobre distintos eventos relevantes del sistema utilizando SendGrid enviando mails a los distintos usuarios.
+* **Microservicio Bank Statements:** Gestión completa de estados de cuenta bancarios con generación automática mensual mediante cron job (día 1 de cada mes), generación de estado de cuneta del mes actual consumiendo transacciones externas; muestra al cliente un balance de sus gastos.
 
 ### Características implementadas
 
@@ -137,7 +138,12 @@ El sistema se compone de los siguientes elementos. Se marcan en **negrita** los 
     * Realiza transferencias en momentos programados utilizando una sincronización por NTP y algunas limitaciones tipo Rate Limit para asegurar un correcto funcionamiento. 
 8.  **Microservicio Notifications (Python/Quart):** 
     * Se encarga de informar a los usuarios sobre distintos eventos relevantes del sistema utilizando SendGrid enviando mails a los distintos usuarios. 
-9.  **Frontend común (React/Vite):**
+9.  **Microservicio Bank Statements (Node.js/Express):**
+    * Gestión de estados de cuenta bancarios (CRUD).
+    * Generación automática mensual con cron job (día 1 de cada mes las 00:01).
+    * Generación de estado decuenta del mes actual consumiendo microservicio de transacciones.
+    * Visualización gráfica de balances.
+10.  **Frontend común (React/Vite):**
     * Interfaz unificada con rutas y navegación. Incluye páginas específicas para cada microservicio
 
 
@@ -271,6 +277,22 @@ Servicio de análisis antifraude y gestión de alertas. Usa MongoDB para persist
 | `GET`    | `/users/{iban}/fraud-alerts` | Lista alertas asociadas a un IBAN concreto (origen).                                     | `200`, `404`, `400`       |
 | `PUT`    | `/fraud-alerts/{id}`         | Actualiza una alerta (estado: PENDING/REVIEWED/CONFIRMED/FALSE_POSITIVE, motivo).        | `200`, `404`, `400`       |
 | `DELETE` | `/fraud-alerts/{id}`         | Elimina una alerta de fraude.                                                            | `200`, `404`, `400`       |
+
+### Microservicio Bank Statements (Node.js / Express)
+Gestión de estados de cuenta bancarios con generación automática mensual y manual. Persistencia en MongoDB con Mongoose, documentación en swagger.
+
+**Prefijo:** `/v1/bankstatements`
+
+| Método   | Endpoint                       | Descripción                                                                      | Códigos de Respuesta      |
+|:---------|:-------------------------------|:---------------------------------------------------------------------------------|:--------------------------|
+| `GET`    | `/health`                      | Health check del servicio                                                        | `200`, `500`              |
+| `GET`    | `/by-iban/:iban`               | Lista todos los meses disponibles para un IBAN                                   | `200`, `400`, `403`, `404`|
+| `GET`    | `/by-iban?iban=...&month=...`  | Obtiene estado de cuenta específico por IBAN y mes (YYYY-MM)                     | `200`, `400`, `403`, `404`|
+| `GET`    | `/:id`                         | Obtiene estado de cuenta por ID de MongoDB                                       | `200`, `400`, `404`       |
+| `POST`   | `/generate`                    | Generación bulk/single de estados de cuenta                                      | `201`, `400`, `500`       |
+| `POST`   | `/generate-current`            | Genera estado de cuenta del mes actual consumiendo transacciones externas        | `201`, `200`, `400`, `500`|
+| `DELETE` | `/:id`                         | Elimina estado de cuenta por ID                                                  | `204`, `400`, `404`       |
+| `PUT`    | `/account/:iban/statements`    | Reemplaza todos los statements de una cuenta                                     | `200`, `400`, `404`       |
 
 ---
 
@@ -534,6 +556,37 @@ Se ha realizado un seguimiento de las horas dedicadas mediante herramienta de Ti
 | Microservicio Cards       | 33 h          |
 | Frontend Común            | 38 h          |
 | **TOTAL GENERAL**         | **71 h**      |
+
+---
+
+## 8.9. Microservicio Bank Statements
+
+| Fecha  | Actividad Principal                                                                 | Duración |
+|:-------|:-------------------------------------------------------------------------------------|:---------|
+| 20 Dic | Análisis funcional y definición del dominio de estados de cuenta                    | 3 h      |
+| 21 Dic | Diseño de la arquitectura del microservicio Bank Statements                          | 4 h      |
+| 22 Dic | Implementación de endpoints REST principales y validadores                           | 5 h      |
+| 23 Dic | Configuración de MongoDB con Mongoose y definición de schemas                        | 3 h      |
+| 27 Dic | Implementación de generación automática con cron job (node-cron)                     | 4 h      |
+| 28 Dic | Integración con microservicio de transacciones y estrategias http/mock               | 5 h      |
+| 29 Dic | Implementación de endpoint generate-current con filtrado de transacciones            | 4 h      |
+| 03 Ene | Configuración de middleware de autenticación JWT                                     | 6 h      |
+| 04 Ene | Implementación de tests con Jest (internos y externos)                               | 5 h      |
+| 05 Ene | Documentación OpenAPI completa con especificación YAML                               | 3 h      |
+| 06 Ene | Contenerización con Docker y docker-compose                                          | 3 h      |
+| 07 Ene | Configuración de GitHub Actions para CI/CD                                           | 2 h      |
+| 08 Ene | Pruebas de integración con otros microservicios y modificación de visata en frontend                                      | 18 h      |
+| 09 Ene | Documentación técnica completa (README, ejemplos, scripts)                           | 4 h      |
+|        | **Total**                                                                            | **69 h** |
+
+---
+
+## 8.10. Resumen Final Edith
+
+| Módulo / Categoría              | Horas Totales |
+|:--------------------------------|:--------------|
+| Microservicio Bank Statements   | 55 h          |
+| **TOTAL GENERAL**               | **69 h**      |
 
 ---
 
