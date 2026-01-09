@@ -22,7 +22,7 @@ El proyecto se presenta con la arquitectura base y los microservicios totalmente
 * **Microservicio Anti-fraud:** Reglas de detección de fraude, creación/gestión de alertas y bloqueo proactivo de cuentas mediante circuit breaker hacia Accounts.
 * **Microservicio Scheduled Payments:** Funcionalidad completa, realiza transferencias en momentos programados utilizando una sincronización por NTP y algunas limitaciones tipo Rate Limit para asegurar un correcto funcionamiento.
 * **Microservicio Notifications:** Funcionalidad completa, se encarga de informar a los usuarios sobre distintos eventos relevantes del sistema utilizando SendGrid enviando mails a los distintos usuarios.
-* **Microservicio Bank Statements:** Gestión completa de estados de cuenta bancarios con generación automática mensual mediante cron job (día 1 de cada mes), generación de estado de cuneta del mes actual consumiendo transacciones externas; muestra al cliente un balance de sus gastos.
+* **Microservicio Bank Statements:** Gestión completa de estados de cuenta bancarios con generación automática mensual mediante cron job, generación de estado de cuneta del mes actual consumiendo transacciones externas; muestra al cliente un balance de sus gastos.
 
 ### Características implementadas
 
@@ -585,7 +585,7 @@ Se ha realizado un seguimiento de las horas dedicadas mediante herramienta de Ti
 
 | Módulo / Categoría              | Horas Totales |
 |:--------------------------------|:--------------|
-| Microservicio Bank Statements   | 55 h          |
+| Microservicio Bank Statements   | 69 h          |
 | **TOTAL GENERAL**               | **69 h**      |
 
 ---
