@@ -115,7 +115,8 @@ El diseño separa la lógica de negocio principal (cuentas y operaciones) de ser
 ## 3. Descomposición y Arquitectura
 El sistema se compone de los siguientes elementos. Se marcan en **negrita** los desarrollados por esta parte del equipo:
 
-1.  **API Gateway:** Punto único de entrada. Protege la red interna y distribuye las peticiones.
+1.  **API Gateway:**
+    * Punto único de entrada. Protege la red interna y distribuye las peticiones.
 2.  **Microservicio Accounts (Python/Quart):**
     * Encargado de la persistencia y lógica de las cuentas.
     * Maneja la validación estricta de datos (Pydantic).
@@ -132,7 +133,12 @@ El sistema se compone de los siguientes elementos. Se marcan en **negrita** los 
 6.  **Microservicio Anti-Fraud (NestJS/Express):**
     * Reglas de detección de riesgo sobre transacciones (importe, histórico, destinos).
     * Gestiona alertas de fraude (crear, listar, actualizar, eliminar) y bloquea cuentas vía Accounts con circuit breaker y timeout configurables.
-7.  **Frontend común (React/Vite):** interfaz unificada con rutas y navegación. Incluye páginas específicas para cada microservicio
+7.  **Microservicio Scheduled Payments (Python/Quart):**
+    * Realiza transferencias en momentos programados utilizando una sincronización por NTP y algunas limitaciones tipo Rate Limit para asegurar un correcto funcionamiento. 
+8.  **Microservicio Notifications (Python/Quart):** 
+    * Se encarga de informar a los usuarios sobre distintos eventos relevantes del sistema utilizando SendGrid enviando mails a los distintos usuarios. 
+9.  **Frontend común (React/Vite):**
+    * Interfaz unificada con rutas y navegación. Incluye páginas específicas para cada microservicio
 
 
 Diagrama del microservicio cards
