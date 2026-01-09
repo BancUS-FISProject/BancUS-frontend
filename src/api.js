@@ -1,5 +1,5 @@
 // Detectamos la URL base de la API de forma segura
-let API_BASE = "http://localhost:10000/v1";
+let API_BASE = "https://68.221.252.242:10000/v1";
 
 // Vite: variables tipo import.meta.env.VITE_*
 if (typeof import.meta !== "undefined" && import.meta.env) {
@@ -100,9 +100,9 @@ export const cardsApi = {
 
   // Cambia el estado de una tarjeta (active - frozen)
   setStatus: (pan, status) =>
-  apiRequest(`/cards/status/${encodeURIComponent(pan)}/${encodeURIComponent(status)}`, {
-    method: "PUT",
-  }),
+    apiRequest(`/cards/status/${encodeURIComponent(pan)}/${encodeURIComponent(status)}`, {
+      method: "PUT",
+    }),
 
   // Borra tarjeta por id
   deleteById: (id) =>
