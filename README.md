@@ -151,9 +151,6 @@ El sistema se compone de los siguientes elementos. Se marcan en **negrita** los 
 11.  **Frontend común (React/Vite):**
     * Interfaz unificada con rutas y navegación. Incluye páginas específicas para cada microservicio
 
-<<<<<<< Updated upstream
-Diagrama del microservicio cards
-=======
 ## Diagrama del microservicio Accounts
 ![Estructura Microservicio Cuentas](diagramas/Currencies%20st%20full.png)
 
@@ -161,7 +158,6 @@ Diagrama del microservicio cards
 ![Estructura Microservicio Cuentas](diagramas/Accounts%20full.png)
 
 ## Diagrama del microservicio cards
->>>>>>> Stashed changes
 
 ![Operaciones del modelo de cards](diagramas/diagrama-1.png)
 
