@@ -151,7 +151,17 @@ El sistema se compone de los siguientes elementos. Se marcan en **negrita** los 
 11.  **Frontend común (React/Vite):**
     * Interfaz unificada con rutas y navegación. Incluye páginas específicas para cada microservicio
 
+<<<<<<< Updated upstream
 Diagrama del microservicio cards
+=======
+## Diagrama del microservicio Accounts
+![Estructura Microservicio Cuentas](diagramas/Currencies%20st%20full.png)
+
+## Diagrama del microservicio Currencies
+![Estructura Microservicio Cuentas](diagramas/Accounts%20full.png)
+
+## Diagrama del microservicio cards
+>>>>>>> Stashed changes
 
 ![Operaciones del modelo de cards](diagramas/diagrama-1.png)
 
@@ -571,37 +581,6 @@ Se ha realizado un seguimiento de las horas dedicadas mediante herramienta de Ti
 | Microservicio Cards       | 33 h          |
 | Frontend Común            | 38 h          |
 | **TOTAL GENERAL**         | **71 h**      |
-
----
-
-## 8.9. Microservicio Bank Statements
-
-| Fecha  | Actividad Principal                                                                 | Duración |
-|:-------|:-------------------------------------------------------------------------------------|:---------|
-| 20 Dic | Análisis funcional y definición del dominio de estados de cuenta                    | 3 h      |
-| 21 Dic | Diseño de la arquitectura del microservicio Bank Statements                          | 4 h      |
-| 22 Dic | Implementación de endpoints REST principales y validadores                           | 5 h      |
-| 23 Dic | Configuración de MongoDB con Mongoose y definición de schemas                        | 3 h      |
-| 27 Dic | Implementación de generación automática con cron job (node-cron)                     | 4 h      |
-| 28 Dic | Integración con microservicio de transacciones y estrategias http/mock               | 5 h      |
-| 29 Dic | Implementación de endpoint generate-current con filtrado de transacciones            | 4 h      |
-| 03 Ene | Configuración de middleware de autenticación JWT                                     | 6 h      |
-| 04 Ene | Implementación de tests con Jest (internos y externos)                               | 5 h      |
-| 05 Ene | Documentación OpenAPI completa con especificación YAML                               | 3 h      |
-| 06 Ene | Contenerización con Docker y docker-compose                                          | 3 h      |
-| 07 Ene | Configuración de GitHub Actions para CI/CD                                           | 2 h      |
-| 08 Ene | Pruebas de integración con otros microservicios y modificación de visata en frontend                                      | 18 h      |
-| 09 Ene | Documentación técnica completa (README, ejemplos, scripts)                           | 4 h      |
-|        | **Total**                                                                            | **69 h** |
-
----
-
-## 8.10. Resumen Final Edith
-
-| Módulo / Categoría              | Horas Totales |
-|:--------------------------------|:--------------|
-| Microservicio Bank Statements   | 69 h          |
-| **TOTAL GENERAL**               | **69 h**      |
 
 ---
 
