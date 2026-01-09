@@ -100,9 +100,9 @@ export const cardsApi = {
 
   // Cambia el estado de una tarjeta (active - frozen)
   setStatus: (pan, status) =>
-  apiRequest(`/cards/status/${encodeURIComponent(pan)}/${encodeURIComponent(status)}`, {
-    method: "PUT",
-  }),
+    apiRequest(`/cards/status/${encodeURIComponent(pan)}/${encodeURIComponent(status)}`, {
+      method: "PUT",
+    }),
 
   // Borra tarjeta por id
   deleteById: (id) =>
